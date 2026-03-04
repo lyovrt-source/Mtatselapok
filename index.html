@@ -193,7 +193,7 @@ function renderSeat(i) {
     <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
     ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `
       <div class="fold-actions">
-        <button class="btn-fold" onclick="foldPlayer(event, ${i})">ԹԱՓԵԼ</button>
+        <button class="btn-fold" onclick="foldPlayer(event, ${i})">ՔՑԵԼ</button>
         <button class="btn-plus ${s.plusActive ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button>
       </div>
     `}
