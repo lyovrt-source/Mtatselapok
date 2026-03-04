@@ -104,7 +104,7 @@ let currentTurnIndex = -1;
 
 function createDeck() {
   deck = [];
-  values.forEach((v, i) => { for(let k=0; k<4; k++) deck.push({v, rank: i+1}); });
+  values.forEach((v, i) => { for(let k=0; k<3; k++) deck.push({v, rank: i+1}); });
   deck.sort(() => Math.random() - 0.5);
 }
 
