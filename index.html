@@ -36,23 +36,16 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
   box-sizing: border-box;
 }
 
-/* ԱՎԵԼԱՑՎԱԾ ԽԱՂԱՑՈՂԻ ՍԵՌԻ ՇՐՋԱՆԱԿԸ */
 .seat-slot.active {
-  border: 1px solid #444;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.02);
-  padding: 4px;
+  border: 1px solid #444; border-radius: 12px; background: rgba(255, 255, 255, 0.02); padding: 4px;
 }
 
 .winner-glow {
-  border: 2px solid var(--gold) !important;
-  box-shadow: 0 0 25px var(--gold);
-  background: rgba(255, 215, 0, 0.1) !important;
+  border: 2px solid var(--gold) !important; box-shadow: 0 0 25px var(--gold); background: rgba(255, 215, 0, 0.1) !important;
 }
 
 .active-turn {
-  border: 2px solid var(--neon-green) !important;
-  box-shadow: 0 0 20px var(--neon-green), inset 0 0 10px var(--neon-green);
+  border: 2px solid var(--neon-green) !important; box-shadow: 0 0 20px var(--neon-green), inset 0 0 10px var(--neon-green);
   animation: pulse-neon 1.5s infinite;
 }
 
@@ -65,24 +58,24 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .name-box { width: 100%; background: rgba(0,0,0,0.92); padding: 1px 0; border-radius: 4px; border-bottom: 1px solid var(--gray); margin-bottom: 4px; }
 .name-tag { color: var(--gold); font-size: 10px; font-weight: bold; }
 .score-tag { color: #fff; font-size: 12px; font-weight: 900; }
+.fold-tag { color: var(--red); font-size: 14px; font-weight: bold; margin-top: 5px; }
 .cards-container { display: flex; justify-content: center; gap: 3px; width: 100%; }
 
-/* ԹԱՓԵԼ ԿՈՃԱԿԻ ԻՋԵՑՈՒՄ */
-.btn-fold { 
-  background: var(--red); color: #fff; border: none; 
-  padding: 4px 8px; border-radius: 4px; font-size: 9px; 
-  margin-top: 8px; /* Ավելի շատ տարածություն քարերից */
-  cursor: pointer; 
-  font-weight: bold;
-}
+.fold-actions { display: flex; gap: 4px; margin-top: 8px; }
+.btn-fold { background: var(--red); color: #fff; border: none; padding: 4px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: bold; }
+.btn-plus { background: #333; color: #fff; border: 1px solid #666; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; }
+.btn-plus.pushed { background: var(--green); border-color: var(--neon-green); }
 
 .controls { position: fixed; bottom: 10px; width: 100%; display: flex; justify-content: center; gap: 6px; padding: 0 10px; box-sizing: border-box; }
 .btn { flex: 1; padding: 14px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; background: #2e7d32; font-size: 11px; }
 .del-btn { position: absolute; top: -8px; right: -8px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; z-index: 10; }
-.folded { opacity: 0.2; filter: grayscale(1); }
+.folded { opacity: 0.5; filter: grayscale(0.5); }
+.bet-display { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px; color: var(--gold); font-weight: bold; font-size: 14px; z-index: 100; }
 </style>
 </head>
 <body>
+
+<div class="bet-display" id="betDisplay">Ընթացիկ տուգանք՝ 50</div>
 
 <div class="table-container">
   <div class="table" id="mainTable">
@@ -91,6 +84,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 </div>
 
 <div class="controls">
+  <button class="btn" style="background: #555; max-width: 50px;" onclick="setBet()">📝</button>
   <button class="btn" onclick="startNewRound()">ՆՈՐ ԽԱՂ</button>
   <button class="btn" style="background: #2196F3;" onclick="revealAll()">ԲԱՑԵԼ</button>
   <button class="btn" style="background: #ef6c00;" onclick="nextCommunity()">ՀԱՋՈՐԴ ՔԱՐՏ</button>
@@ -100,7 +94,29 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 const values = ["1","2","3","4","5","6","7","8","9"];
 let deck = [], seats = [], community = [], stage = 0, isRevealed = false;
 let gameCount = 0;
-let currentTurnIndex = -1;
+let baseBet = 50; 
+let currentPenaltyLevel = 50;
+let plusPressedThisTurn = false;
+
+function setBet() {
+  let b = prompt("Սահմանեք մեկնարկային տուգանքը (կոպեկ):", baseBet);
+  if (b && !isNaN(b)) {
+    baseBet = parseInt(b);
+    currentPenaltyLevel = baseBet;
+    updateBetDisplay();
+  }
+}
+
+function updateBetDisplay() {
+  document.getElementById("betDisplay").innerText = "Ընթացիկ տուգանք՝ " + currentPenaltyLevel;
+}
+
+function handlePlus(event, i) {
+  event.stopPropagation();
+  plusPressedThisTurn = true;
+  seats[i].plusActive = true;
+  renderSeat(i);
+}
 
 function createDeck() {
   deck = [];
@@ -114,7 +130,7 @@ function setupSlots() {
     let angle = (2 * Math.PI / 9) * i + Math.PI/2;
     let x = 50 + 44 * Math.cos(angle); 
     let y = 50 + 46 * Math.sin(angle);
-    seats.push({name: null, cards: [], open: false, folded: false});
+    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false});
     let slot = document.createElement("div");
     slot.className = "seat-slot"; slot.id = "slot" + i;
     slot.style.left = x + "%"; slot.style.top = y + "%";
@@ -133,15 +149,13 @@ function addPlayer(event, i) {
 function setTurn(index) {
   if (community.length === 5 || !seats[index].name) return;
   currentTurnIndex = index;
-  seats.forEach((_, i) => {
-    document.getElementById("slot" + i).classList.remove("active-turn");
-  });
+  seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); });
   document.getElementById("slot" + index).classList.add("active-turn");
 }
 
 function removePlayer(event, i) {
   event.stopPropagation();
-  seats[i] = {name: null, cards: [], open: false, folded: false};
+  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false};
   let slot = document.getElementById("slot"+i);
   slot.className = "seat-slot";
   slot.style.border = "1px solid transparent";
@@ -177,22 +191,39 @@ function renderSeat(i) {
     <button class="del-btn" onclick="removePlayer(event, ${i})">×</button>
     <div class="name-box"><span class="name-tag">${s.name}</span><span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span></div>
     <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
-    ${!s.folded ? `<button class="btn-fold" onclick="foldPlayer(event, ${i})">ԹԱՓԵԼ</button>` : ''}
+    ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `
+      <div class="fold-actions">
+        <button class="btn-fold" onclick="foldPlayer(event, ${i})">ԹԱՓԵԼ</button>
+        <button class="btn-plus ${s.plusActive ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button>
+      </div>
+    `}
   `;
 }
 
-function foldPlayer(event, i) { event.stopPropagation(); seats[i].folded = true; renderSeat(i); }
+function foldPlayer(event, i) { 
+  event.stopPropagation(); 
+  seats[i].folded = true;
+  seats[i].penalty = currentPenaltyLevel;
+  renderSeat(i); 
+}
+
 function cardHTML(c, open) { return `<div class="card-wrap"><div class="card ${open ? 'open' : ''}"><div class="back"></div><div class="face">${c.v}</div></div></div>`; }
 
 function startNewRound() {
   createDeck(); community = []; stage = 0; isRevealed = false;
+  currentPenaltyLevel = baseBet;
+  plusPressedThisTurn = false;
+  updateBetDisplay();
   document.getElementById("dealerCards").innerHTML = "";
   gameCount++;
   let activeSeats = [];
   seats.forEach((s, i) => { if(s.name) activeSeats.push(i); });
   seats.forEach((s, i) => { 
     document.getElementById("slot"+i).classList.remove("winner-glow", "active-turn");
-    if(s.name) { s.open = false; s.folded = false; s.cards = [deck.pop(), deck.pop()]; renderSeat(i); } 
+    if(s.name) { 
+      s.open = false; s.folded = false; s.penalty = 0; s.plusActive = false;
+      s.cards = [deck.pop(), deck.pop()]; renderSeat(i); 
+    } 
   });
   if (activeSeats.length > 0) {
     let turnIdx = (gameCount - 1) % activeSeats.length;
@@ -201,9 +232,26 @@ function startNewRound() {
 }
 
 function nextCommunity() {
+  // Եթե մինչև նոր քար բացելը ինչ-որ մեկը սեղմել է "+", տուգանքը բարձրանում է
+  if (plusPressedThisTurn) {
+    currentPenaltyLevel += baseBet;
+    plusPressedThisTurn = false;
+  }
+  
+  // Բոլորի "+" կոճակները հետ ենք բերում սովորական վիճակի նոր քայլի համար
+  seats.forEach((s, i) => {
+    if (s.name) {
+      s.plusActive = false;
+      renderSeat(i);
+    }
+  });
+
   if (stage === 0) { community = [deck.pop(), deck.pop(), deck.pop()]; stage = 1; }
   else if (stage < 3) { community.push(deck.pop()); stage++; }
+  
   document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join('');
+  updateBetDisplay();
+
   if (community.length === 5) { 
     seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); });
     markWinner(); 
