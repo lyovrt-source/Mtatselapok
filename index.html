@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LyovT Math Cards - Refined UI</title>
+<style>
+:root { --gold: #ffd700; --bg: #050505; --red: #ff4444; --green: #1a7a4a; --neon-green: #39ff14; --gray: #444; --card-bg: #000; }
+body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
+
+.table-container { display: flex; justify-content: center; align-items: center; height: 85vh; padding-top: 5px; }
+
+.table {
+  position: relative; width: 92vw; max-width: 380px; height: 75vh;     
+  background: radial-gradient(circle at center, #1a7a4a 0%, #06311d 100%);
+  border-radius: 160px; border: 10px solid #2d1e15; box-shadow: inset 0 0 45px #000;
+}
+
+#dealerCards { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 4px; z-index: 1; }
+
+.card { width: 36px; height: 52px; position: relative; transform-style: preserve-3d; transition: transform 0.4s; }
+#dealerCards .card { width: 44px; height: 64px; }
+.face { 
+  background: var(--card-bg); transform: rotateY(180deg); font-size: 40px; font-weight: 900; color: #fff; 
+  display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--gray); border-radius: 50%;
+  position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+}
+.seat-slot .face { font-size: 34px; }
+.back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: linear-gradient(45deg, #333, #000); border: 1px solid var(--gray); border-radius: 50%; }
+.card.open { transform: rotateY(180deg); }
+
+.seat-slot {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 90px; height: 120px; display: flex; flex-direction: column; align-items: center;
+  z-index: 5; border: 1px solid transparent; transition: 0.3s; cursor: pointer;
+  box-sizing: border-box;
+}
+
+/* ԱՎԵԼԱՑՎԱԾ ԽԱՂԱՑՈՂԻ ՍԵՌԻ ՇՐՋԱՆԱԿԸ */
+.seat-slot.active {
+  border: 1px solid #444;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 4px;
+}
+
+.winner-glow {
+  border: 2px solid var(--gold) !important;
+  box-shadow: 0 0 25px var(--gold);
+  background: rgba(255, 215, 0, 0.1) !important;
+}
+
+.active-turn {
+  border: 2px solid var(--neon-green) !important;
+  box-shadow: 0 0 20px var(--neon-green), inset 0 0 10px var(--neon-green);
+  animation: pulse-neon 1.5s infinite;
+}
+
+@keyframes pulse-neon {
+  0% { box-shadow: 0 0 10px var(--neon-green); }
+  50% { box-shadow: 0 0 25px var(--neon-green); }
+  100% { box-shadow: 0 0 10px var(--neon-green); }
+}
+
+.name-box { width: 100%; background: rgba(0,0,0,0.92); padding: 1px 0; border-radius: 4px; border-bottom: 1px solid var(--gray); margin-bottom: 4px; }
+.name-tag { color: var(--gold); font-size: 10px; font-weight: bold; }
+.score-tag { color: #fff; font-size: 12px; font-weight: 900; }
+.cards-container { display: flex; justify-content: center; gap: 3px; width: 100%; }
+
+/* ԹԱՓԵԼ ԿՈՃԱԿԻ ԻՋԵՑՈՒՄ */
+.btn-fold { 
+  background: var(--red); color: #fff; border: none; 
+  padding: 4px 8px; border-radius: 4px; font-size: 9px; 
+  margin-top: 8px; /* Ավելի շատ տարածություն քարերից */
+  cursor: pointer; 
+  font-weight: bold;
+}
+
+.controls { position: fixed; bottom: 10px; width: 100%; display: flex; justify-content: center; gap: 6px; padding: 0 10px; box-sizing: border-box; }
+.btn { flex: 1; padding: 14px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; background: #2e7d32; font-size: 11px; }
+.del-btn { position: absolute; top: -8px; right: -8px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; z-index: 10; }
+.folded { opacity: 0.2; filter: grayscale(1); }
+</style>
+</head>
+<body>
+
+<div class="table-container">
+  <div class="table" id="mainTable">
+    <div id="dealerCards"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn" onclick="startNewRound()">ՆՈՐ ԽԱՂ</button>
+  <button class="btn" style="background: #2196F3;" onclick="revealAll()">ԲԱՑԵԼ</button>
+  <button class="btn" style="background: #ef6c00;" onclick="nextCommunity()">ՀԱՋՈՐԴ ՔԱՐՏ</button>
+</div>
+
+<script>
+const values = ["1","2","3","4","5","6","7","8","9"];
+let deck = [], seats = [], community = [], stage = 0, isRevealed = false;
+let gameCount = 0;
+let currentTurnIndex = -1;
+
+function createDeck() {
+  deck = [];
+  values.forEach((v, i) => { for(let k=0; k<4; k++) deck.push({v, rank: i+1}); });
+  deck.sort(() => Math.random() - 0.5);
+}
+
+function setupSlots() {
+  const t = document.getElementById("mainTable");
+  for(let i=0; i<9; i++){
+    let angle = (2 * Math.PI / 9) * i + Math.PI/2;
+    let x = 50 + 44 * Math.cos(angle); 
+    let y = 50 + 46 * Math.sin(angle);
+    seats.push({name: null, cards: [], open: false, folded: false});
+    let slot = document.createElement("div");
+    slot.className = "seat-slot"; slot.id = "slot" + i;
+    slot.style.left = x + "%"; slot.style.top = y + "%";
+    slot.onclick = () => setTurn(i);
+    slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer" onclick="addPlayer(event, ${i})">+</button>`;
+    t.appendChild(slot);
+  }
+}
+
+function addPlayer(event, i) {
+  event.stopPropagation();
+  let n = prompt("Անունը:");
+  if (n) { seats[i].name = n; renderSeat(i); }
+}
+
+function setTurn(index) {
+  if (community.length === 5 || !seats[index].name) return;
+  currentTurnIndex = index;
+  seats.forEach((_, i) => {
+    document.getElementById("slot" + i).classList.remove("active-turn");
+  });
+  document.getElementById("slot" + index).classList.add("active-turn");
+}
+
+function removePlayer(event, i) {
+  event.stopPropagation();
+  seats[i] = {name: null, cards: [], open: false, folded: false};
+  let slot = document.getElementById("slot"+i);
+  slot.className = "seat-slot";
+  slot.style.border = "1px solid transparent";
+  slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer" onclick="addPlayer(event, ${i})">+</button>`;
+}
+
+function calculateScore(hand) {
+  if (!hand || hand.length < 2) return 0;
+  let all = [...hand, ...community];
+  let counts = {};
+  all.forEach(c => counts[c.rank] = (counts[c.rank] || 0) + 1);
+  let total = 0;
+  for (let r in counts) {
+    let rank = parseInt(r), n = counts[r];
+    if (rank === 1) total += n;
+    else if (n > 1) total += Math.pow(rank, n);
+    else total += rank;
+  }
+  return total;
+}
+
+function renderSeat(i) {
+  let s = seats[i]; let slot = document.getElementById("slot" + i);
+  if(!s.name) return;
+  
+  let hasWinner = slot.classList.contains("winner-glow");
+  let hasTurn = slot.classList.contains("active-turn");
+  
+  slot.className = "seat-slot active" + (s.folded ? " folded" : "") + (hasWinner ? " winner-glow" : "") + (hasTurn ? " active-turn" : "");
+  
+  let score = calculateScore(s.cards);
+  slot.innerHTML = `
+    <button class="del-btn" onclick="removePlayer(event, ${i})">×</button>
+    <div class="name-box"><span class="name-tag">${s.name}</span><span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span></div>
+    <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
+    ${!s.folded ? `<button class="btn-fold" onclick="foldPlayer(event, ${i})">ԹԱՓԵԼ</button>` : ''}
+  `;
+}
+
+function foldPlayer(event, i) { event.stopPropagation(); seats[i].folded = true; renderSeat(i); }
+function cardHTML(c, open) { return `<div class="card-wrap"><div class="card ${open ? 'open' : ''}"><div class="back"></div><div class="face">${c.v}</div></div></div>`; }
+
+function startNewRound() {
+  createDeck(); community = []; stage = 0; isRevealed = false;
+  document.getElementById("dealerCards").innerHTML = "";
+  gameCount++;
+  let activeSeats = [];
+  seats.forEach((s, i) => { if(s.name) activeSeats.push(i); });
+  seats.forEach((s, i) => { 
+    document.getElementById("slot"+i).classList.remove("winner-glow", "active-turn");
+    if(s.name) { s.open = false; s.folded = false; s.cards = [deck.pop(), deck.pop()]; renderSeat(i); } 
+  });
+  if (activeSeats.length > 0) {
+    let turnIdx = (gameCount - 1) % activeSeats.length;
+    setTurn(activeSeats[turnIdx]);
+  }
+}
+
+function nextCommunity() {
+  if (stage === 0) { community = [deck.pop(), deck.pop(), deck.pop()]; stage = 1; }
+  else if (stage < 3) { community.push(deck.pop()); stage++; }
+  document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join('');
+  if (community.length === 5) { 
+    seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); });
+    markWinner(); 
+  }
+  seats.forEach((s, i) => { if(s.name) renderSeat(i); });
+}
+
+function revealAll() {
+  isRevealed = true;
+  seats.forEach((s, i) => { if(s.name) { s.open = true; renderSeat(i); } });
+}
+
+function markWinner() {
+  let active = [];
+  seats.forEach((s, i) => { 
+    document.getElementById("slot" + i).classList.remove("winner-glow");
+    if(s.name && !s.folded) active.push({s, i, score: calculateScore(s.cards)}); 
+  });
+  if (active.length > 0) {
+    active.sort((a, b) => b.score - a.score);
+    document.getElementById("slot" + active[0].i).classList.add("winner-glow");
+    renderSeat(active[0].i);
+  }
+}
+setupSlots();
+</script>
+</body>
+</html>
