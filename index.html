@@ -3,19 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LyovT Math Cards - Refined UI</title>
+<title>LyovT Math Cards - Grouped Scoring</title>
 <style>
-:root { --gold: #ffd700; --bg: #0a192f; --red: #ff4444; --green: #1a7a4a; --neon-green: #39ff14; --gray: #444; --card-bg: #000; }
+:root { --gold: #ffd700; --bg: #0a192f; --red: #ff4444; --green: #1a7a4a; --neon-green: #39ff14; --gray: #444; --card-bg: #000; --blue: #2196F3; }
 body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
 
-/* Modal Styles */
+/* 9 Distinct Group Colors */
+.group-0 { border-left: 4px solid transparent; }
+.group-1 { border-left: 4px solid #ff00ff !important; }
+.group-2 { border-left: 4px solid #00ffff !important; }
+.group-3 { border-left: 4px solid #ffff00 !important; }
+.group-4 { border-left: 4px solid #39ff14 !important; }
+.group-5 { border-left: 4px solid #ff4500 !important; }
+.group-6 { border-left: 4px solid #8a2be2 !important; }
+.group-7 { border-left: 4px solid #ffffff !important; }
+.group-8 { border-left: 4px solid #ff69b4 !important; }
+.group-9 { border-left: 4px solid #1e90ff !important; }
+
+@keyframes flash-green {
+  0% { background: rgba(57, 255, 20, 0); }
+  50% { background: rgba(57, 255, 20, 0.4); box-shadow: 0 0 20px var(--neon-green); }
+  100% { background: rgba(0, 0, 0, 0.4); }
+}
+.push-effect { animation: flash-green 0.4s ease-out !important; }
+
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000;
 }
 .modal-content {
   background: #1a1a1a; padding: 20px; border-radius: 15px; border: 2px solid var(--gold);
-  width: 280px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  width: 300px; max-height: 85vh; overflow-y: auto; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 .modal-input {
   width: 80%; padding: 10px; margin: 15px 0; border-radius: 8px; border: 1px solid var(--gray);
@@ -23,30 +41,22 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 }
 .modal-btn {
   background: var(--green); color: white; border: none; padding: 10px 20px;
-  border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%;
+  border-radius: 6px; cursor: pointer; font-weight: bold; width: auto; min-width: 100px;
 }
 
 .table-container { display: flex; justify-content: center; align-items: center; height: 85vh; padding-top: 5px; }
-
 .table {
   position: relative; width: 92vw; max-width: 380px; height: 75vh;     
   background: radial-gradient(circle at center, #1e3c72 0%, #0a192f 100%);
   border-radius: 160px; border: 10px solid #050a14; box-shadow: inset 0 0 45px #000;
 }
-
 .table-texture-overlay {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
-  opacity: 0.15;
-  pointer-events: none;
-  border-radius: 150px;
-  z-index: 0;
+  opacity: 0.15; pointer-events: none; border-radius: 150px; z-index: 0;
 }
 
 #dealerCards { position: absolute; top: 44%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 4px; z-index: 1; }
-
-/* Լրացուցիչ տեքստ սեղանին */
 .table-label {
   position: absolute; top: 56%; left: 50%; transform: translate(-50%, -50%);
   color: rgba(255, 215, 0, 0.4); font-size: 19px; font-weight: bold; letter-spacing: 1px;
@@ -67,22 +77,13 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .seat-slot {
   position: absolute; transform: translate(-50%, -50%);
   width: 90px; height: 120px; display: flex; flex-direction: column; align-items: center;
-  z-index: 5; border: 1px solid transparent; transition: 0.3s; cursor: pointer;
+  z-index: 5; border: 1px solid transparent; transition: border 0.3s;
   box-sizing: border-box; -webkit-tap-highlight-color: transparent;
 }
-
-.seat-slot.active {
-  border: 1px solid #444; border-radius: 12px; background: rgba(0, 0, 0, 0.4); padding: 4px;
-}
-
-.winner-glow {
-  border: 2px solid var(--gold) !important; box-shadow: 0 0 25px var(--gold); background: rgba(255, 215, 0, 0.1) !important;
-}
-
-.active-turn {
-  border: 2px solid var(--neon-green) !important; box-shadow: 0 0 20px var(--neon-green), inset 0 0 10px var(--neon-green);
-  animation: pulse-neon 1.5s infinite;
-}
+.seat-slot.active { border: 1px solid #444; border-radius: 12px; background: rgba(0, 0, 0, 0.4); padding: 4px; }
+.seat-slot.folded { opacity: 0.5; filter: grayscale(0.8); }
+.winner-glow { border: 2px solid var(--gold) !important; box-shadow: 0 0 25px var(--gold); background: rgba(255, 215, 0, 0.1) !important; }
+.active-turn { border: 2px solid var(--neon-green) !important; box-shadow: 0 0 20px var(--neon-green); animation: pulse-neon 1.5s infinite; }
 
 @keyframes pulse-neon {
   0% { box-shadow: 0 0 10px var(--neon-green); }
@@ -104,17 +105,45 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .controls { position: fixed; bottom: 10px; width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 0 10px; box-sizing: border-box; }
 .btn-group { width: 100%; display: flex; justify-content: center; gap: 6px; }
 .btn { flex: 1; padding: 14px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; background: #2e7d32; font-size: 11px; }
-.folded { opacity: 0.9; filter: grayscale(0.2); }
 .bet-display { background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 5px; color: var(--gold); font-weight: bold; font-size: 14px; z-index: 100; margin-bottom: 2px; }
+
+/* Score table styles */
+.score-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; }
+.group-dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #666; cursor: pointer; margin-right: 10px; flex-shrink: 0; }
+.total-score { font-size: 24px; color: var(--neon-green); margin-top: 15px; font-weight: 900; border-top: 2px solid var(--gold); padding-top: 10px; }
+.group-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px 0; justify-items: center; }
+.g-btn { width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; cursor: pointer; }
+
+/* New Group Layout */
+.group-block {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #333;
+  margin-bottom: 4px;
+}
+.group-players {
+  flex: 1;
+}
+.group-total-val {
+  font-size: 28px;
+  font-weight: 900;
+  color: #fff;
+  padding: 0 15px;
+  min-width: 50px;
+  text-align: center;
+  border-left: 1px solid rgba(255,255,255,0.1);
+}
 </style>
 </head>
 <body>
 
 <div id="customModal" class="modal-overlay">
-  <div class="modal-content">
-    <h3 id="modalTitle" style="color:var(--gold); margin:0;">Մուտքագրում</h3>
-    <input type="text" id="modalInput" class="modal-input">
-    <button class="modal-btn" onclick="closeModal()">ՀԱՍՏԱՏԵԼ</button>
+  <div class="modal-content" id="modalContent">
+    <h3 id="modalTitle" style="color:var(--gold); margin:0;"></h3>
+    <div id="modalBody"></div>
+    <div style="text-align: center; margin-top: 10px;">
+      <button class="modal-btn" onclick="closeModal()">ՀԱՍՏԱՏԵԼ</button>
+    </div>
   </div>
 </div>
 
@@ -131,6 +160,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
   <div class="btn-group">
     <button class="btn" style="background: #333; max-width: 45px;" onclick="undoMove()">↩️</button>
     <button class="btn" style="background: #555; max-width: 45px;" onclick="setBet()">📝</button>
+    <button class="btn" style="background: #555; max-width: 45px;" onclick="showPoints()">📌</button>
     <button class="btn" onclick="startNewRound()">ՆՈՐ ԽԱՂ</button>
     <button class="btn" style="background: #2196F3;" onclick="revealAll()">ԲԱՑԵԼ</button>
     <button class="btn" style="background: #ef6c00;" onclick="nextCommunity()">ՀԱՋՈՐԴ</button>
@@ -139,22 +169,15 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 
 <script>
 const values = ["1","2","3","4","5","6","7","8","9"];
+const groupColors = ["transparent", "#ff00ff", "#00ffff", "#ffff00", "#39ff14", "#ff4500", "#8a2be2", "#ffffff", "#ff69b4", "#1e90ff"];
 let deck = [], seats = [], community = [], stage = 0, isRevealed = false;
-let gameCount = 0;
-let baseBet = 30; 
-let currentPenaltyLevel = 30;
-let plusPressedThisTurn = false;
-let gameStateHistory = [];
-
-let activeModalAction = null;
+let gameCount = 0, baseBet = 30, currentPenaltyLevel = 30, plusPressedThisTurn = false;
+let gameStateHistory = [], activeModalAction = null;
 
 function saveState() {
   const state = {
-    community: JSON.stringify(community),
-    stage: stage,
-    currentPenaltyLevel: currentPenaltyLevel,
-    plusPressedThisTurn: plusPressedThisTurn,
-    isRevealed: isRevealed,
+    community: JSON.stringify(community), stage: stage, currentPenaltyLevel: currentPenaltyLevel,
+    plusPressedThisTurn: plusPressedThisTurn, isRevealed: isRevealed,
     seats: JSON.stringify(seats.map(s => ({...s, lastClick: 0})))
   };
   gameStateHistory.push(state);
@@ -164,52 +187,97 @@ function saveState() {
 function undoMove() {
   if (gameStateHistory.length === 0) return;
   const lastState = gameStateHistory.pop();
-  community = JSON.parse(lastState.community);
-  stage = lastState.stage;
-  currentPenaltyLevel = lastState.currentPenaltyLevel;
-  plusPressedThisTurn = lastState.plusPressedThisTurn;
-  isRevealed = lastState.isRevealed;
-  seats = JSON.parse(lastState.seats);
-  
+  community = JSON.parse(lastState.community); stage = lastState.stage;
+  currentPenaltyLevel = lastState.currentPenaltyLevel; plusPressedThisTurn = lastState.plusPressedThisTurn;
+  isRevealed = lastState.isRevealed; seats = JSON.parse(lastState.seats);
   updateBetDisplay();
   document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join('');
   seats.forEach((s, i) => { if(s.name) renderSeat(i); });
 }
 
-function showModal(title, val, action) {
+function showModal(title, bodyHtml, action) {
   document.getElementById('modalTitle').innerText = title;
-  document.getElementById('modalInput').value = val;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
   document.getElementById('customModal').style.display = 'flex';
   activeModalAction = action;
-  setTimeout(() => document.getElementById('modalInput').focus(), 100);
 }
 
 function closeModal() {
-  let val = document.getElementById('modalInput').value;
+  let val = document.getElementById('modalInput')?.value;
   document.getElementById('customModal').style.display = 'none';
   if (activeModalAction) activeModalAction(val);
 }
 
-function setBet() {
-  showModal("Սահմանել Մեկնարկային", baseBet, (b) => {
-    if (b && !isNaN(b)) {
-      saveState();
-      baseBet = parseInt(b);
-      currentPenaltyLevel = baseBet;
-      updateBetDisplay();
+function openGroupPicker(seatIdx) {
+  let pickerHtml = `<div class="group-selector">`;
+  groupColors.forEach((color, gId) => {
+    pickerHtml += `<div class="g-btn" style="background:${color}" onclick="setPlayerGroup(${seatIdx}, ${gId})"></div>`;
+  });
+  pickerHtml += `</div>`;
+  showModal("Ընտրիր Խումբը", pickerHtml, null);
+}
+
+function setPlayerGroup(seatIdx, groupId) {
+  seats[seatIdx].groupId = groupId;
+  document.getElementById('customModal').style.display = 'none';
+  showPoints();
+}
+
+function showPoints() {
+  let totalTablePenalty = 0;
+  let groupsInPlay = new Set();
+  seats.forEach(s => { if(s.name && !s.folded && s.groupId > 0) groupsInPlay.add(s.groupId); });
+
+  let grouped = {};
+  seats.forEach((s, i) => {
+    if (!s.name) return;
+    if (!grouped[s.groupId]) grouped[s.groupId] = [];
+    let isIgnored = s.groupId > 0 && groupsInPlay.has(s.groupId) && s.folded;
+    let actualP = isIgnored ? 0 : (s.penalty || 0);
+    totalTablePenalty += actualP;
+    grouped[s.groupId].push({...s, idx: i, isIgnored, actualP});
+  });
+
+  let rowsHtml = "";
+  Object.keys(grouped).forEach(gId => {
+    let groupSum = 0;
+    let playersHtml = "";
+    grouped[gId].forEach(p => {
+      groupSum += p.actualP;
+      playersHtml += `<div class="score-row group-${p.groupId}"><div style="display:flex; align-items:center;"><div class="group-dot" style="background:${groupColors[p.groupId]}" onclick="openGroupPicker(${p.idx})"></div><span>${p.name}</span></div><span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'LINKED' : '-' + p.penalty) : '0'}</span></div>`;
+    });
+
+    if (gId == 0) {
+        rowsHtml += playersHtml;
+    } else {
+        rowsHtml += `
+          <div class="group-block">
+            <div class="group-players">${playersHtml}</div>
+            <div class="group-total-val" style="color:#fff">${groupSum > 0 ? groupSum : 0}</div>
+          </div>`;
     }
+  });
+
+  showModal("Միավորներ", `<div>${rowsHtml || '<p style="opacity:0.5">Խաղացողներ չկան</p>'}<div class="total-score">ԸՆԴՀԱՆՈՒՐ: ${totalTablePenalty}</div></div>`, null);
+}
+
+function setBet() {
+  showModal("Սահմանել Մեկնարկային", `<input type="number" id="modalInput" class="modal-input" value="${baseBet}">`, (b) => {
+    if (b && !isNaN(b)) { saveState(); baseBet = parseInt(b); currentPenaltyLevel = baseBet; updateBetDisplay(); }
   });
 }
 
-function updateBetDisplay() {
-  document.getElementById("betDisplay").innerText = "Ընթացիկ ՝ " + currentPenaltyLevel;
-}
+function updateBetDisplay() { document.getElementById("betDisplay").innerText = "Ընթացիկ ՝ " + currentPenaltyLevel; }
 
 function handlePlus(event, i) {
   event.stopPropagation();
   saveState();
   plusPressedThisTurn = true;
   seats[i].plusActive = true;
+  const slot = document.getElementById("slot" + i);
+  slot.classList.remove("push-effect");
+  void slot.offsetWidth;
+  slot.classList.add("push-effect");
   renderSeat(i);
 }
 
@@ -224,10 +292,8 @@ function setupSlots() {
   for(let i=0; i<9; i++){
     let angle = (2 * Math.PI / 9) * i + Math.PI/2;
     let x = 50 + 44 * Math.cos(angle); 
-    let distY = 46; 
-    if (i === 2 || i === 7) { distY = 60; }
-    let y = 50 + distY * Math.sin(angle);
-    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0});
+    let y = 50 + ((i === 2 || i === 7) ? 60 : 46) * Math.sin(angle);
+    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0, groupId: 0});
     let slot = document.createElement("div");
     slot.className = "seat-slot"; slot.id = "slot" + i;
     slot.style.left = x + "%"; slot.style.top = y + "%";
@@ -238,124 +304,93 @@ function setupSlots() {
 }
 
 function handleSlotInteraction(e, i) {
-  if (!seats[i].name) { addPlayer(e, i); return; }
+  if (!seats[i].name) { 
+    showModal("Անունը", `<input type="text" id="modalInput" class="modal-input">`, (n) => { if (n) { seats[i].name = n; renderSeat(i); } });
+    return;
+  }
   let now = Date.now();
   if (now - seats[i].lastClick < 1000) { seats[i].clicks++; } else { seats[i].clicks = 1; }
   seats[i].lastClick = now;
-  if (seats[i].clicks >= 5) { saveState(); removePlayer(i); } else { setTurn(i); }
-}
-
-function addPlayer(event, i) {
-  if (event) event.stopPropagation();
-  showModal("Անունը", "", (n) => {
-    if (n) { seats[i].name = n; renderSeat(i); }
-  });
+  if (seats[i].clicks >= 5) { saveState(); removePlayer(i); } else { if(!seats[i].folded) setTurn(i); }
 }
 
 function setTurn(index) {
-  if (community.length === 5 || !seats[index].name) return;
   seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); });
-  document.getElementById("slot" + index).classList.add("active-turn");
+  if (community.length < 5 && seats[index].name && !seats[index].folded) {
+    document.getElementById("slot" + index).classList.add("active-turn");
+  }
+}
+
+function renderSeat(i) {
+  let s = seats[i], slot = document.getElementById("slot" + i);
+  if(!s.name) return;
+  let hasWinner = slot.classList.contains("winner-glow");
+  let hasTurn = slot.classList.contains("active-turn");
+  let hasAnim = slot.classList.contains("push-effect");
+  
+  slot.className = "seat-slot active" + (s.folded ? " folded" : "") + (hasWinner ? " winner-glow" : "") + (hasTurn ? " active-turn" : "") + (hasAnim ? " push-effect" : "");
+  let score = calculateScore(s.cards);
+  slot.innerHTML = `
+    <div class="name-box" style="border-top: 3px solid ${groupColors[s.groupId]}"><span class="name-tag">${s.name}</span><span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span></div>
+    <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
+    ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `<div class="fold-actions"><button class="btn-fold" onclick="foldPlayer(event, ${i})">ՔՑԵԼ</button><button class="btn-plus ${s.plusActive ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button></div>`}
+  `;
 }
 
 function removePlayer(i) {
-  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0};
+  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0, groupId: 0};
   let slot = document.getElementById("slot"+i);
-  slot.className = "seat-slot";
-  slot.style.border = "1px solid transparent";
+  slot.className = "seat-slot"; slot.style.border = "1px solid transparent";
   slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer">+</button>`;
 }
 
 function calculateScore(hand) {
   if (!hand || hand.length < 2) return 0;
-  let all = [...hand, ...community];
-  let counts = {};
+  let all = [...hand, ...community], counts = {};
   all.forEach(c => counts[c.rank] = (counts[c.rank] || 0) + 1);
   let total = 0;
   for (let r in counts) {
     let rank = parseInt(r), n = counts[r];
-    if (rank === 1) total += n;
-    else if (n > 1) total += Math.pow(rank, n);
-    else total += rank;
+    if (rank === 1) total += n; else if (n > 1) total += Math.pow(rank, n); else total += rank;
   }
   return total;
 }
 
-function renderSeat(i) {
-  let s = seats[i]; let slot = document.getElementById("slot" + i);
-  if(!s.name) return;
-  let hasWinner = slot.classList.contains("winner-glow");
-  let hasTurn = slot.classList.contains("active-turn");
-  slot.className = "seat-slot active" + (s.folded ? " folded" : "") + (hasWinner ? " winner-glow" : "") + (hasTurn ? " active-turn" : "");
-  let score = calculateScore(s.cards);
-  slot.innerHTML = `
-    <div class="name-box"><span class="name-tag">${s.name}</span><span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span></div>
-    <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
-    ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `
-      <div class="fold-actions">
-        <button class="btn-fold" onclick="foldPlayer(event, ${i})">ՔՑԵԼ</button>
-        <button class="btn-plus ${s.plusActive ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button>
-      </div>
-    `}
-  `;
-}
-
 function foldPlayer(event, i) { 
-  event.stopPropagation(); 
-  saveState();
-  seats[i].folded = true;
-  seats[i].penalty = currentPenaltyLevel;
+  event.stopPropagation(); saveState();
+  seats[i].folded = true; seats[i].penalty = currentPenaltyLevel;
+  document.getElementById("slot" + i).classList.remove("active-turn");
   renderSeat(i); 
 }
 
 function cardHTML(c, open) { return `<div class="card-wrap"><div class="card ${open ? 'open' : ''}"><div class="back"></div><div class="face">${c.v}</div></div></div>`; }
 
 function startNewRound() {
-  gameStateHistory = []; 
-  createDeck(); community = []; stage = 0; isRevealed = false;
-  currentPenaltyLevel = baseBet;
-  plusPressedThisTurn = false;
-  updateBetDisplay();
-  document.getElementById("dealerCards").innerHTML = "";
-  gameCount++;
+  gameStateHistory = []; createDeck(); community = []; stage = 0; isRevealed = false;
+  currentPenaltyLevel = baseBet; plusPressedThisTurn = false; updateBetDisplay();
+  document.getElementById("dealerCards").innerHTML = ""; gameCount++;
   let activeSeats = [];
   seats.forEach((s, i) => { if(s.name) activeSeats.push(i); });
   seats.forEach((s, i) => { 
-    document.getElementById("slot"+i).classList.remove("winner-glow", "active-turn");
-    if(s.name) { 
-      s.open = false; s.folded = false; s.penalty = 0; s.plusActive = false;
-      s.cards = [deck.pop(), deck.pop()]; renderSeat(i); 
-    } 
+    document.getElementById("slot"+i).classList.remove("winner-glow", "active-turn", "folded", "push-effect");
+    if(s.name) { s.open = false; s.folded = false; s.penalty = 0; s.plusActive = false; s.cards = [deck.pop(), deck.pop()]; renderSeat(i); } 
   });
-  if (activeSeats.length > 0) {
-    let turnIdx = (gameCount - 1) % activeSeats.length;
-    setTurn(activeSeats[turnIdx]);
-  }
+  if (activeSeats.length > 0) setTurn(activeSeats[(gameCount - 1) % activeSeats.length]);
 }
 
 function nextCommunity() {
   saveState();
-  if (plusPressedThisTurn) {
-    currentPenaltyLevel += baseBet;
-    plusPressedThisTurn = false;
-  }
+  if (plusPressedThisTurn) { currentPenaltyLevel += baseBet; plusPressedThisTurn = false; }
   seats.forEach((s, i) => { if (s.name) { s.plusActive = false; renderSeat(i); } });
   if (stage === 0) { community = [deck.pop(), deck.pop(), deck.pop()]; stage = 1; }
   else if (stage < 3) { community.push(deck.pop()); stage++; }
   document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join('');
   updateBetDisplay();
-  if (community.length === 5) { 
-    seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); });
-    markWinner(); 
-  }
+  if (community.length === 5) { seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); }); markWinner(); }
   seats.forEach((s, i) => { if(s.name) renderSeat(i); });
 }
 
-function revealAll() {
-  saveState();
-  isRevealed = true;
-  seats.forEach((s, i) => { if(s.name) { s.open = true; renderSeat(i); } });
-}
+function revealAll() { saveState(); isRevealed = true; seats.forEach((s, i) => { if(s.name) { s.open = true; renderSeat(i); } }); }
 
 function markWinner() {
   let active = [];
@@ -372,5 +407,4 @@ function markWinner() {
 setupSlots();
 </script>
 </body>
-  </html>
-  
+</html>
