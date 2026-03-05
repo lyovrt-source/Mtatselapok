@@ -8,6 +8,24 @@
 :root { --gold: #ffd700; --bg: #050505; --red: #ff4444; --green: #1a7a4a; --neon-green: #39ff14; --gray: #444; --card-bg: #000; }
 body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000;
+}
+.modal-content {
+  background: #1a1a1a; padding: 20px; border-radius: 15px; border: 2px solid var(--gold);
+  width: 280px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+.modal-input {
+  width: 80%; padding: 10px; margin: 15px 0; border-radius: 8px; border: 1px solid var(--gray);
+  background: #000; color: #fff; text-align: center; font-size: 18px; outline: none;
+}
+.modal-btn {
+  background: var(--green); color: white; border: none; padding: 10px 20px;
+  border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%;
+}
+
 .table-container { display: flex; justify-content: center; align-items: center; height: 85vh; padding-top: 5px; }
 
 .table {
@@ -16,7 +34,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
   border-radius: 160px; border: 10px solid #2d1e15; box-shadow: inset 0 0 45px #000;
 }
 
-#dealerCards { position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 4px; z-index: 1; }
+#dealerCards { position: absolute; top: 43%; left: 50%; transform: translate(-50%, -50%); display: flex; gap: 4px; z-index: 1; }
 
 .card { width: 36px; height: 52px; position: relative; transform-style: preserve-3d; transition: transform 0.4s; }
 #dealerCards .card { width: 44px; height: 64px; }
@@ -33,7 +51,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
   position: absolute; transform: translate(-50%, -50%);
   width: 90px; height: 120px; display: flex; flex-direction: column; align-items: center;
   z-index: 5; border: 1px solid transparent; transition: 0.3s; cursor: pointer;
-  box-sizing: border-box;
+  box-sizing: border-box; -webkit-tap-highlight-color: transparent;
 }
 
 .seat-slot.active {
@@ -62,19 +80,26 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .cards-container { display: flex; justify-content: center; gap: 3px; width: 100%; }
 
 .fold-actions { display: flex; gap: 4px; margin-top: 8px; }
-.btn-fold { background: var(--red); color: #fff; border: none; padding: 4px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: bold; }
-.btn-plus { background: #333; color: #fff; border: 1px solid #666; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; }
+.btn-fold { background: var(--red); color: #fff; border: none; padding: 4px 6px; border-radius: 4px; font-size: 9px; cursor: pointer; font-weight: bold; min-width: 38px; height: 21px; }
+.btn-plus { background: #333; color: #fff; border: 1px solid #666; padding: 4px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; min-width: 38px; height: 21px; display: flex; align-items: center; justify-content: center; }
 .btn-plus.pushed { background: var(--green); border-color: var(--neon-green); }
 
 .controls { position: fixed; bottom: 10px; width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 0 10px; box-sizing: border-box; }
 .btn-group { width: 100%; display: flex; justify-content: center; gap: 6px; }
 .btn { flex: 1; padding: 14px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; background: #2e7d32; font-size: 11px; }
-.del-btn { position: absolute; top: -8px; right: -8px; background: var(--red); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 12px; z-index: 10; }
-.folded { opacity: 0.5; filter: grayscale(0.5); }
+.folded { opacity: 0.9; filter: grayscale(0.2); }
 .bet-display { background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 5px; color: var(--gold); font-weight: bold; font-size: 14px; z-index: 100; margin-bottom: 2px; }
 </style>
 </head>
 <body>
+
+<div id="customModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3 id="modalTitle" style="color:var(--gold); margin:0;">Մուտքագրում</h3>
+    <input type="text" id="modalInput" class="modal-input">
+    <button class="modal-btn" onclick="closeModal()">ՀԱՍՏԱՏԵԼ</button>
+  </div>
+</div>
 
 <div class="table-container">
   <div class="table" id="mainTable">
@@ -83,7 +108,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 </div>
 
 <div class="controls">
-  <div class="bet-display" id="betDisplay">Ընթացիկ ՝ 50</div>
+  <div class="bet-display" id="betDisplay">Ընթացիկ ՝ 30</div>
   <div class="btn-group">
     <button class="btn" style="background: #555; max-width: 50px;" onclick="setBet()">📝</button>
     <button class="btn" onclick="startNewRound()">ՆՈՐ ԽԱՂ</button>
@@ -96,17 +121,34 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 const values = ["1","2","3","4","5","6","7","8","9"];
 let deck = [], seats = [], community = [], stage = 0, isRevealed = false;
 let gameCount = 0;
-let baseBet = 50; 
-let currentPenaltyLevel = 50;
+let baseBet = 30; 
+let currentPenaltyLevel = 30;
 let plusPressedThisTurn = false;
 
+let activeModalAction = null;
+
+function showModal(title, val, action) {
+  document.getElementById('modalTitle').innerText = title;
+  document.getElementById('modalInput').value = val;
+  document.getElementById('customModal').style.display = 'flex';
+  activeModalAction = action;
+  setTimeout(() => document.getElementById('modalInput').focus(), 100);
+}
+
+function closeModal() {
+  let val = document.getElementById('modalInput').value;
+  document.getElementById('customModal').style.display = 'none';
+  if (activeModalAction) activeModalAction(val);
+}
+
 function setBet() {
-  let b = prompt("Սահմանեք մեկնարկային :", baseBet);
-  if (b && !isNaN(b)) {
-    baseBet = parseInt(b);
-    currentPenaltyLevel = baseBet;
-    updateBetDisplay();
-  }
+  showModal("Սահմանել Մեկնարկային", baseBet, (b) => {
+    if (b && !isNaN(b)) {
+      baseBet = parseInt(b);
+      currentPenaltyLevel = baseBet;
+      updateBetDisplay();
+    }
+  });
 }
 
 function updateBetDisplay() {
@@ -132,36 +174,56 @@ function setupSlots() {
     let angle = (2 * Math.PI / 9) * i + Math.PI/2;
     let x = 50 + 44 * Math.cos(angle); 
     let y = 50 + 46 * Math.sin(angle);
-    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false});
+    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0});
     let slot = document.createElement("div");
     slot.className = "seat-slot"; slot.id = "slot" + i;
     slot.style.left = x + "%"; slot.style.top = y + "%";
-    slot.onclick = () => setTurn(i);
-    slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer" onclick="addPlayer(event, ${i})">+</button>`;
+    slot.onclick = (e) => handleSlotInteraction(e, i);
+    slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer">+</button>`;
     t.appendChild(slot);
   }
 }
 
+function handleSlotInteraction(e, i) {
+  if (!seats[i].name) {
+    addPlayer(e, i);
+    return;
+  }
+  
+  let now = Date.now();
+  if (now - seats[i].lastClick < 1000) {
+    seats[i].clicks++;
+  } else {
+    seats[i].clicks = 1;
+  }
+  seats[i].lastClick = now;
+
+  if (seats[i].clicks >= 5) {
+    removePlayer(i);
+  } else {
+    setTurn(i);
+  }
+}
+
 function addPlayer(event, i) {
-  event.stopPropagation();
-  let n = prompt("Անունը:");
-  if (n) { seats[i].name = n; renderSeat(i); }
+  if (event) event.stopPropagation();
+  showModal("Անունը", "", (n) => {
+    if (n) { seats[i].name = n; renderSeat(i); }
+  });
 }
 
 function setTurn(index) {
   if (community.length === 5 || !seats[index].name) return;
-  currentTurnIndex = index;
   seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); });
   document.getElementById("slot" + index).classList.add("active-turn");
 }
 
-function removePlayer(event, i) {
-  event.stopPropagation();
-  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false};
+function removePlayer(i) {
+  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0};
   let slot = document.getElementById("slot"+i);
   slot.className = "seat-slot";
   slot.style.border = "1px solid transparent";
-  slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer" onclick="addPlayer(event, ${i})">+</button>`;
+  slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer">+</button>`;
 }
 
 function calculateScore(hand) {
@@ -190,7 +252,6 @@ function renderSeat(i) {
   
   let score = calculateScore(s.cards);
   slot.innerHTML = `
-    <button class="del-btn" onclick="removePlayer(event, ${i})">×</button>
     <div class="name-box"><span class="name-tag">${s.name}</span><span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span></div>
     <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
     ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `
