@@ -262,7 +262,7 @@ function showPoints() {
       
       let isWinner = (activePlayersCount === 1 && !p.folded);
       let nameHtml = isWinner ? `<span class="winner-active-name">${p.name}</span>` : `<span>${p.name}</span>`;
-      let scoreHtml = isWinner ? `<span class="victory-label">ՀԱՂԹԱՆԱԿ</span>` : `<span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'LINKED' : '-' + p.penalty) : '0'}</span>`;
+      let scoreHtml = isWinner ? `<span class="victory-label">ՀԱՂԹԱՆԱԿ</span>` : `<span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'Թիմ' : '-' + p.penalty) : '0'}</span>`;
 
       playersHtml += `<div class="score-row group-${p.groupId}"><div style="display:flex; align-items:center;"><div class="group-dot" style="background:${groupColors[p.groupId]}" onclick="openGroupPicker(${p.idx})"></div>${nameHtml}</div>${scoreHtml}</div>`;
     });
