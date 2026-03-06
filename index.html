@@ -27,6 +27,14 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 }
 .push-effect { animation: flash-green 0.4s ease-out !important; }
 
+/* Հաղթողի անվան անիմացիան */
+@keyframes winner-bounce {
+  0%, 100% { transform: scale(1); color: var(--gold); }
+  50% { transform: scale(1.1); color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
+}
+.winner-active-name { display: inline-block; animation: winner-bounce 0.8s infinite ease-in-out; font-weight: bold; }
+.victory-label { color: var(--neon-green) !important; font-weight: 900 !important; text-transform: uppercase; font-size: 11px; }
+
 .modal-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000;
@@ -226,7 +234,14 @@ function setPlayerGroup(seatIdx, groupId) {
 function showPoints() {
   let totalTablePenalty = 0;
   let groupsInPlay = new Set();
-  seats.forEach(s => { if(s.name && !s.folded && s.groupId > 0) groupsInPlay.add(s.groupId); });
+  let activePlayersCount = 0;
+
+  seats.forEach(s => { 
+    if(s.name && !s.folded) {
+      activePlayersCount++;
+      if(s.groupId > 0) groupsInPlay.add(s.groupId); 
+    }
+  });
 
   let grouped = {};
   seats.forEach((s, i) => {
@@ -244,7 +259,12 @@ function showPoints() {
     let playersHtml = "";
     grouped[gId].forEach(p => {
       groupSum += p.actualP;
-      playersHtml += `<div class="score-row group-${p.groupId}"><div style="display:flex; align-items:center;"><div class="group-dot" style="background:${groupColors[p.groupId]}" onclick="openGroupPicker(${p.idx})"></div><span>${p.name}</span></div><span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'LINKED' : '-' + p.penalty) : '0'}</span></div>`;
+      
+      let isWinner = (activePlayersCount === 1 && !p.folded);
+      let nameHtml = isWinner ? `<span class="winner-active-name">${p.name}</span>` : `<span>${p.name}</span>`;
+      let scoreHtml = isWinner ? `<span class="victory-label">ՀԱՂԹԱՆԱԿ</span>` : `<span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'LINKED' : '-' + p.penalty) : '0'}</span>`;
+
+      playersHtml += `<div class="score-row group-${p.groupId}"><div style="display:flex; align-items:center;"><div class="group-dot" style="background:${groupColors[p.groupId]}" onclick="openGroupPicker(${p.idx})"></div>${nameHtml}</div>${scoreHtml}</div>`;
     });
 
     if (gId == 0) {
