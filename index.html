@@ -311,8 +311,14 @@ function setupSlots() {
   const t = document.getElementById("mainTable");
   for(let i=0; i<9; i++){
     let angle = (2 * Math.PI / 9) * i + Math.PI/2;
-    let x = 50 + 44 * Math.cos(angle); 
+    
+    // ՓՈՓՈԽՈՒԹՅՈՒՆՆ ԱՅՍՏԵՂ Է՝
+    // Շառավիղը (radius) սովորական 44-ից դարձրել եմ 20 այն խաղացողների համար, ովքեր եզրից դուրս էին գալիս
+    let r = (i === 2 || i === 7 || i === 0 || i === 0 ) ? 40 : 44;
+    
+    let x = 50 + r * Math.cos(angle); 
     let y = 50 + ((i === 2 || i === 7) ? 60 : 46) * Math.sin(angle);
+    
     seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0, groupId: 0});
     let slot = document.createElement("div");
     slot.className = "seat-slot"; slot.id = "slot" + i;
