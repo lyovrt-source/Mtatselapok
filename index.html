@@ -16,9 +16,22 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .group-4 { border-left: 4px solid #39ff14 !important; }
 .group-5 { border-left: 4px solid #ff4500 !important; }
 .group-6 { border-left: 4px solid #8a2be2 !important; }
-.group-7 { border-left: 4px solid #ffffff !important; }
-.group-8 { border-left: 4px solid #ff69b4 !important; }
-.group-9 { border-left: 4px solid #1e90ff !important; }
+.group-7 { border-left: 4px solid #ff0000 !important; }
+.group-8 { border-left: 4px solid #ffffff !important; }
+.group-9 { border-left: 4px solid #000000 !important; }
+
+/* Mini Stake Overlay - Ավելացված է պահպանելով ոճը */
+.mini-stake-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(10, 25, 47, 0.98); border-radius: 12px; z-index: 50;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px;
+  border: 2px solid var(--gold); box-sizing: border-box; padding: 5px;
+}
+.mini-opt {
+  width: 85%; background: #222; color: #fff; border: 1px solid var(--blue);
+  padding: 8px 0; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer;
+}
+.mini-opt:disabled { opacity: 0.2; border-color: #444; color: #666; }
 
 @keyframes flash-green {
   0% { background: rgba(57, 255, 20, 0); }
@@ -143,7 +156,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 }
 </style>
 </head>
-<body>
+<body onclick="closeAllMiniOverlays()">
 
 <div id="customModal" class="modal-overlay">
   <div class="modal-content" id="modalContent">
@@ -156,7 +169,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 </div>
 
 <div class="table-container">
-  <div class="table" id="mainTable">
+  <div class="table" id="mainTable" onclick="event.stopPropagation()">
     <div class="table-texture-overlay"></div>
     <div id="dealerCards"></div>
     <div class="table-label">Logic & math challenge</div>
@@ -164,7 +177,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 </div>
 
 <div class="controls">
-  <div class="bet-display" id="betDisplay">Ընթացիկ ՝ 30</div>
+  <div class="bet-display" id="betDisplay">Ընթացիկ ՝ 0</div>
   <div class="btn-group">
     <button class="btn" style="background: #333; max-width: 45px;" onclick="undoMove()">↩️</button>
     <button class="btn" style="background: #555; max-width: 45px;" onclick="setBet()">📝</button>
@@ -177,30 +190,28 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 
 <script>
 const values = ["1","2","3","4","5","6","7","8","9"];
-const groupColors = ["transparent", "#ff00ff", "#00ffff", "#ffff00", "#39ff14", "#ff4500", "#8a2be2", "#ffffff", "#ff69b4", "#1e90ff"];
+const groupColors = ["transparent", "#ff00ff", "#00ffff", "#ffff00", "#39ff14", "#ff4500", "#8a2be2", "#ff0000", "#ffffff", "#000000"];
 let deck = [], seats = [], community = [], stage = 0, isRevealed = false;
-let gameCount = 0, baseBet = 30, currentPenaltyLevel = 30, plusPressedThisTurn = false;
+let gameCount = 0, baseBet = 30, currentRoundMax = 0;
 let gameStateHistory = [], activeModalAction = null;
 
 function saveState() {
   const state = {
-    community: JSON.stringify(community), stage: stage, currentPenaltyLevel: currentPenaltyLevel,
-    plusPressedThisTurn: plusPressedThisTurn, isRevealed: isRevealed,
-    seats: JSON.stringify(seats.map(s => ({...s, lastClick: 0})))
+    community: JSON.stringify(community), stage, currentRoundMax,
+    isRevealed, seats: JSON.stringify(seats.map(s => ({...s, lastClick: 0})))
   };
   gameStateHistory.push(state);
-  if (gameStateHistory.length > 10) gameStateHistory.shift();
+  if (gameStateHistory.length > 15) gameStateHistory.shift();
 }
 
 function undoMove() {
   if (gameStateHistory.length === 0) return;
   const lastState = gameStateHistory.pop();
   community = JSON.parse(lastState.community); stage = lastState.stage;
-  currentPenaltyLevel = lastState.currentPenaltyLevel; plusPressedThisTurn = lastState.plusPressedThisTurn;
-  isRevealed = lastState.isRevealed; seats = JSON.parse(lastState.seats);
+  currentRoundMax = lastState.currentRoundMax; isRevealed = lastState.isRevealed;
+  seats = JSON.parse(lastState.seats);
   updateBetDisplay();
-  document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join('');
-  seats.forEach((s, i) => { if(s.name) renderSeat(i); });
+  renderAll();
 }
 
 function showModal(title, bodyHtml, action) {
@@ -255,71 +266,62 @@ function showPoints() {
 
   let rowsHtml = "";
   Object.keys(grouped).forEach(gId => {
-    let groupSum = 0;
-    let playersHtml = "";
+    let groupSum = 0, playersHtml = "";
     grouped[gId].forEach(p => {
       groupSum += p.actualP;
-      
       let isWinner = (activePlayersCount === 1 && !p.folded);
       let nameHtml = isWinner ? `<span class="winner-active-name">${p.name}</span>` : `<span>${p.name}</span>`;
-      let scoreHtml = isWinner ? `<span class="victory-label">ՀԱՂԹԱՆԱԿ</span>` : `<span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'Թիմ' : '-' + p.penalty) : '0'}</span>`;
-
+      let scoreHtml = isWinner ? `<span class="victory-label">ՀԱՂԹԱՆԱԿ</span>` : `<span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'ԹԻՄ' : '-' + p.penalty) : '0'}</span>`;
       playersHtml += `<div class="score-row group-${p.groupId}"><div style="display:flex; align-items:center;"><div class="group-dot" style="background:${groupColors[p.groupId]}" onclick="openGroupPicker(${p.idx})"></div>${nameHtml}</div>${scoreHtml}</div>`;
     });
-
-    if (gId == 0) {
-        rowsHtml += playersHtml;
-    } else {
-        rowsHtml += `
-          <div class="group-block">
-            <div class="group-players">${playersHtml}</div>
-            <div class="group-total-val" style="color:#fff">${groupSum > 0 ? groupSum : 0}</div>
-          </div>`;
-    }
+    if (gId == 0) rowsHtml += playersHtml;
+    else rowsHtml += `<div class="group-block"><div class="group-players">${playersHtml}</div><div class="group-total-val" style="color:#fff">${groupSum}</div></div>`;
   });
-
-  showModal("Միավորներ", `<div>${rowsHtml || '<p style="opacity:0.5">Խաղացողներ չկան</p>'}<div class="total-score">ԸՆԴՀԱՆՈՒՐ: ${totalTablePenalty}</div></div>`, null);
+  showModal("Միավորներ", `<div>${rowsHtml || 'Դատարկ'}<div class="total-score">ԸՆԴՀԱՆՈՒՐ: ${totalTablePenalty}</div></div>`, null);
 }
 
 function setBet() {
   showModal("Սահմանել Մեկնարկային", `<input type="number" id="modalInput" class="modal-input" value="${baseBet}">`, (b) => {
-    if (b && !isNaN(b)) { saveState(); baseBet = parseInt(b); currentPenaltyLevel = baseBet; updateBetDisplay(); }
+    if (b && !isNaN(b)) { saveState(); baseBet = parseInt(b); updateBetDisplay(); }
   });
 }
 
-function updateBetDisplay() { document.getElementById("betDisplay").innerText = "Ընթացիկ ՝ " + currentPenaltyLevel; }
+function updateBetDisplay() { document.getElementById("betDisplay").innerText = "Ընթացիկ ՝ " + currentRoundMax; }
+
+function closeAllMiniOverlays() {
+  seats.forEach((s, i) => { if(s.showMiniTable) { s.showMiniTable = false; renderSeat(i); } });
+}
 
 function handlePlus(event, i) {
   event.stopPropagation();
-  saveState();
-  plusPressedThisTurn = true;
-  seats[i].plusActive = true;
-  const slot = document.getElementById("slot" + i);
-  slot.classList.remove("push-effect");
-  void slot.offsetWidth;
-  slot.classList.add("push-effect");
+  closeAllMiniOverlays();
+  seats[i].showMiniTable = true;
   renderSeat(i);
 }
 
-function createDeck() {
-  deck = [];
-  values.forEach((v, i) => { for(let k=0; k<3; k++) deck.push({v, rank: i+1}); });
-  deck.sort(() => Math.random() - 0.5);
+function applyStep(seatIdx, amount) {
+  saveState();
+  if (amount > currentRoundMax) {
+    seats.forEach(s => { if(s.name) s.currentStepBet = 0; });
+  }
+  currentRoundMax = amount;
+  seats[seatIdx].currentStepBet = amount;
+  seats[seatIdx].showMiniTable = false;
+  const slot = document.getElementById("slot" + seatIdx);
+  slot.classList.remove("push-effect");
+  void slot.offsetWidth;
+  slot.classList.add("push-effect");
+  updateBetDisplay(); renderAll();
 }
 
 function setupSlots() {
   const t = document.getElementById("mainTable");
   for(let i=0; i<9; i++){
     let angle = (2 * Math.PI / 9) * i + Math.PI/2;
-    
-    // ՓՈՓՈԽՈՒԹՅՈՒՆՆ ԱՅՍՏԵՂ Է՝
-    // Շառավիղը (radius) սովորական 44-ից դարձրել եմ 20 այն խաղացողների համար, ովքեր եզրից դուրս էին գալիս
-    let r = (i === 2 || i === 7 || i === 0 || i === 0 ) ? 40 : 44;
-    
+    let r = (i === 2 || i === 7 || i === 0) ? 40 : 44;
     let x = 50 + r * Math.cos(angle); 
     let y = 50 + ((i === 2 || i === 7) ? 60 : 46) * Math.sin(angle);
-    
-    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0, groupId: 0});
+    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, currentStepBet: 0, totalCommitted: 0, groupId: 0, showMiniTable: false, clicks: 0, lastClick: 0});
     let slot = document.createElement("div");
     slot.className = "seat-slot"; slot.id = "slot" + i;
     slot.style.left = x + "%"; slot.style.top = y + "%";
@@ -330,21 +332,20 @@ function setupSlots() {
 }
 
 function handleSlotInteraction(e, i) {
+  e.stopPropagation();
   if (!seats[i].name) { 
     showModal("Անունը", `<input type="text" id="modalInput" class="modal-input">`, (n) => { if (n) { seats[i].name = n; renderSeat(i); } });
     return;
   }
   let now = Date.now();
-  if (now - seats[i].lastClick < 1000) { seats[i].clicks++; } else { seats[i].clicks = 1; }
+  if (now - seats[i].lastClick < 1000) seats[i].clicks++; else seats[i].clicks = 1;
   seats[i].lastClick = now;
   if (seats[i].clicks >= 5) { saveState(); removePlayer(i); } else { if(!seats[i].folded) setTurn(i); }
 }
 
 function setTurn(index) {
-  seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); });
-  if (community.length < 5 && seats[index].name && !seats[index].folded) {
-    document.getElementById("slot" + index).classList.add("active-turn");
-  }
+  seats.forEach((_, i) => document.getElementById("slot" + i).classList.remove("active-turn"));
+  if (seats[index].name && !seats[index].folded) document.getElementById("slot" + index).classList.add("active-turn");
 }
 
 function renderSeat(i) {
@@ -355,19 +356,33 @@ function renderSeat(i) {
   let hasAnim = slot.classList.contains("push-effect");
   
   slot.className = "seat-slot active" + (s.folded ? " folded" : "") + (hasWinner ? " winner-glow" : "") + (hasTurn ? " active-turn" : "") + (hasAnim ? " push-effect" : "");
+  
+  let v1 = baseBet, v2 = baseBet*2, v3 = baseBet*3;
   let score = calculateScore(s.cards);
+  
   slot.innerHTML = `
     <div class="name-box" style="border-top: 3px solid ${groupColors[s.groupId]}"><span class="name-tag">${s.name}</span><span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span></div>
     <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
-    ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `<div class="fold-actions"><button class="btn-fold" onclick="foldPlayer(event, ${i})">ՔՑԵԼ</button><button class="btn-plus ${s.plusActive ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button></div>`}
+    ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `
+      <div class="fold-actions">
+        <button class="btn-fold" onclick="foldPlayer(event, ${i})">ՔՑԵԼ</button>
+        <button class="btn-plus ${s.currentStepBet >= currentRoundMax && currentRoundMax > 0 ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button>
+      </div>`}
+    ${s.showMiniTable ? `
+      <div class="mini-stake-overlay" onclick="event.stopPropagation()">
+        <button class="mini-opt" ${v1 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v1})">${v1}</button>
+        <button class="mini-opt" ${v2 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v2})">${v2}</button>
+        <button class="mini-opt" ${v3 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v3})">${v3}</button>
+      </div>` : ''}
   `;
 }
 
+function renderAll() { seats.forEach((_, i) => renderSeat(i)); document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join(''); }
+
 function removePlayer(i) {
-  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, plusActive: false, clicks: 0, lastClick: 0, groupId: 0};
+  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, currentStepBet: 0, totalCommitted: 0, groupId: 0, showMiniTable: false, clicks: 0, lastClick: 0};
   let slot = document.getElementById("slot"+i);
-  slot.className = "seat-slot"; slot.style.border = "1px solid transparent";
-  slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer">+</button>`;
+  slot.className = "seat-slot"; slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer">+</button>`;
 }
 
 function calculateScore(hand) {
@@ -384,36 +399,42 @@ function calculateScore(hand) {
 
 function foldPlayer(event, i) { 
   event.stopPropagation(); saveState();
-  seats[i].folded = true; seats[i].penalty = currentPenaltyLevel;
+  let pen = (seats[i].currentStepBet === 0) ? (stage === 0 ? baseBet : seats[i].totalCommitted) : (seats[i].totalCommitted + seats[i].currentStepBet);
+  seats[i].penalty = pen; seats[i].folded = true;
   document.getElementById("slot" + i).classList.remove("active-turn");
   renderSeat(i); 
 }
 
-function cardHTML(c, open) { return `<div class="card-wrap"><div class="card ${open ? 'open' : ''}"><div class="back"></div><div class="face">${c.v}</div></div></div>`; }
+function cardHTML(c, open) { return `<div class="card ${open ? 'open' : ''}"><div class="back"></div><div class="face">${c.v}</div></div>`; }
 
 function startNewRound() {
-  gameStateHistory = []; createDeck(); community = []; stage = 0; isRevealed = false;
-  currentPenaltyLevel = baseBet; plusPressedThisTurn = false; updateBetDisplay();
-  document.getElementById("dealerCards").innerHTML = ""; gameCount++;
-  let activeSeats = [];
-  seats.forEach((s, i) => { if(s.name) activeSeats.push(i); });
-  seats.forEach((s, i) => { 
+  saveState(); community = []; stage = 0; isRevealed = false; currentRoundMax = 0; updateBetDisplay();
+  deck = []; values.forEach((v, i) => { for(let k=0; k<3; k++) deck.push({v, rank: i+1}); });
+  deck.sort(() => Math.random() - 0.5);
+  gameCount++;
+  seats.forEach((s, i) => {
     document.getElementById("slot"+i).classList.remove("winner-glow", "active-turn", "folded", "push-effect");
-    if(s.name) { s.open = false; s.folded = false; s.penalty = 0; s.plusActive = false; s.cards = [deck.pop(), deck.pop()]; renderSeat(i); } 
+    if(s.name) { s.open = false; s.folded = false; s.penalty = 0; s.currentStepBet = 0; s.totalCommitted = 0; s.cards = [deck.pop(), deck.pop()]; } 
   });
-  if (activeSeats.length > 0) setTurn(activeSeats[(gameCount - 1) % activeSeats.length]);
+  renderAll();
+  let activeIdx = []; seats.forEach((s,i) => { if(s.name) activeIdx.push(i); });
+  if (activeIdx.length > 0) setTurn(activeIdx[(gameCount - 1) % activeIdx.length]);
 }
 
 function nextCommunity() {
   saveState();
-  if (plusPressedThisTurn) { currentPenaltyLevel += baseBet; plusPressedThisTurn = false; }
-  seats.forEach((s, i) => { if (s.name) { s.plusActive = false; renderSeat(i); } });
+  seats.forEach(s => { 
+    if(s.name && !s.folded) { 
+        let confirm = (currentRoundMax === 0 && stage === 0) ? baseBet : currentRoundMax;
+        s.totalCommitted += Math.max(s.currentStepBet, confirm); 
+        s.currentStepBet = 0; 
+    } 
+  });
+  currentRoundMax = 0; updateBetDisplay();
   if (stage === 0) { community = [deck.pop(), deck.pop(), deck.pop()]; stage = 1; }
   else if (stage < 3) { community.push(deck.pop()); stage++; }
-  document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join('');
-  updateBetDisplay();
-  if (community.length === 5) { seats.forEach((_, i) => { document.getElementById("slot" + i).classList.remove("active-turn"); }); markWinner(); }
-  seats.forEach((s, i) => { if(s.name) renderSeat(i); });
+  renderAll();
+  if (community.length === 5) { markWinner(); }
 }
 
 function revealAll() { saveState(); isRevealed = true; seats.forEach((s, i) => { if(s.name) { s.open = true; renderSeat(i); } }); }
