@@ -20,7 +20,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .group-8 { border-left: 4px solid #ffffff !important; }
 .group-9 { border-left: 4px solid #000000 !important; }
 
-/* Mini Stake Overlay - Ավելացված է պահպանելով ոճը */
+/* Mini Stake Overlay */
 .mini-stake-overlay {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(10, 25, 47, 0.98); border-radius: 12px; z-index: 50;
@@ -40,7 +40,6 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 }
 .push-effect { animation: flash-green 0.4s ease-out !important; }
 
-/* Հաղթողի անվան անիմացիան */
 @keyframes winner-bounce {
   0%, 100% { transform: scale(1); color: var(--gold); }
   50% { transform: scale(1.1); color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
@@ -399,8 +398,14 @@ function calculateScore(hand) {
 
 function foldPlayer(event, i) { 
   event.stopPropagation(); saveState();
-  let pen = (seats[i].currentStepBet === 0) ? (stage === 0 ? baseBet : seats[i].totalCommitted) : (seats[i].totalCommitted + seats[i].currentStepBet);
-  seats[i].penalty = pen; seats[i].folded = true;
+  let s = seats[i];
+  let pen = 0;
+  if (stage === 0) {
+    pen = Math.max(s.currentStepBet, baseBet);
+  } else {
+    pen = s.totalCommitted + (s.currentStepBet || currentRoundMax || baseBet);
+  }
+  s.penalty = pen; s.folded = true;
   document.getElementById("slot" + i).classList.remove("active-turn");
   renderSeat(i); 
 }
@@ -425,8 +430,9 @@ function nextCommunity() {
   saveState();
   seats.forEach(s => { 
     if(s.name && !s.folded) { 
-        let confirm = (currentRoundMax === 0 && stage === 0) ? baseBet : currentRoundMax;
-        s.totalCommitted += Math.max(s.currentStepBet, confirm); 
+        let confirm = Math.max(s.currentStepBet, currentRoundMax);
+        if (confirm === 0 && stage === 0) confirm = baseBet;
+        s.totalCommitted += confirm; 
         s.currentStepBet = 0; 
     } 
   });
