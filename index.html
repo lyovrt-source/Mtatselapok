@@ -399,12 +399,16 @@ function calculateScore(hand) {
 function foldPlayer(event, i) { 
   event.stopPropagation(); saveState();
   let s = seats[i];
-  let pen = 0;
-  if (stage === 0) {
-    pen = Math.max(s.currentStepBet, baseBet);
+  
+  // Ուղղում. pen-ը հավասար է արդեն դրածին + այս փուլի սեղմածին (եթե կա)
+  // ԿԱՄ արդեն դրածին + baseBet (եթե փուլի մեջ է ու դեռ ոչինչ չի սեղմել)
+  let pen = s.totalCommitted;
+  if (s.currentStepBet > 0) {
+    pen += s.currentStepBet;
   } else {
-    pen = s.totalCommitted + (s.currentStepBet || currentRoundMax || baseBet);
+    pen += baseBet; // Ավելացնում ենք հաջորդ փուլի մուտքավճարը, եթե հենց սկզբից քցում է
   }
+
   s.penalty = pen; s.folded = true;
   document.getElementById("slot" + i).classList.remove("active-turn");
   renderSeat(i); 
@@ -430,8 +434,10 @@ function nextCommunity() {
   saveState();
   seats.forEach(s => { 
     if(s.name && !s.folded) { 
-        let confirm = Math.max(s.currentStepBet, currentRoundMax);
-        if (confirm === 0 && stage === 0) confirm = baseBet;
+        // Հաջորդ սեղմելիս հաստատվում է կամ իր դրածը, կամ նվազագույն baseBet-ը
+        let confirm = s.currentStepBet; 
+        if (confirm === 0) confirm = baseBet;
+
         s.totalCommitted += confirm; 
         s.currentStepBet = 0; 
     } 
