@@ -3,24 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LyovT Math Cards - Grouped Scoring</title>
+<title>LyovT Math Cards - Logic Restored</title>
 <style>
 :root { --gold: #ffd700; --bg: #0a192f; --red: #ff4444; --green: #1a7a4a; --neon-green: #39ff14; --gray: #444; --card-bg: #000; --blue: #2196F3; }
 body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; overflow: hidden; }
 
-/* 9 Distinct Group Colors */
-.group-0 { border-left: 4px solid transparent; }
-.group-1 { border-left: 4px solid #ff00ff !important; }
-.group-2 { border-left: 4px solid #00ffff !important; }
-.group-3 { border-left: 4px solid #ffff00 !important; }
-.group-4 { border-left: 4px solid #39ff14 !important; }
-.group-5 { border-left: 4px solid #ff4500 !important; }
-.group-6 { border-left: 4px solid #8a2be2 !important; }
-.group-7 { border-left: 4px solid #ff0000 !important; }
-.group-8 { border-left: 4px solid #ffffff !important; }
-.group-9 { border-left: 4px solid #000000 !important; }
-
-/* Mini Stake Overlay */
 .mini-stake-overlay {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(10, 25, 47, 0.98); border-radius: 12px; z-index: 50;
@@ -44,7 +31,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
   0%, 100% { transform: scale(1); color: var(--gold); }
   50% { transform: scale(1.1); color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
 }
-.winner-active-name { display: inline-block; animation: winner-bounce 0.8s infinite ease-in-out; font-weight: bold; }
+.winner-active-name { display: inline-block; animation: winner-bounce 0.8s infinite ease-in-out; font-weight: bold; cursor: pointer; }
 .victory-label { color: var(--neon-green) !important; font-weight: 900 !important; text-transform: uppercase; font-size: 11px; }
 
 .modal-overlay {
@@ -63,6 +50,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
   background: var(--green); color: white; border: none; padding: 10px 20px;
   border-radius: 6px; cursor: pointer; font-weight: bold; width: auto; min-width: 100px;
 }
+.icon-btn { background: #333; border: 1px solid #555; font-size: 20px; padding: 5px; border-radius: 8px; cursor: pointer; vertical-align: middle; }
 
 .table-container { display: flex; justify-content: center; align-items: center; height: 85vh; padding-top: 5px; }
 .table {
@@ -105,13 +93,7 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .winner-glow { border: 2px solid var(--gold) !important; box-shadow: 0 0 25px var(--gold); background: rgba(255, 215, 0, 0.1) !important; }
 .active-turn { border: 2px solid var(--neon-green) !important; box-shadow: 0 0 20px var(--neon-green); animation: pulse-neon 1.5s infinite; }
 
-@keyframes pulse-neon {
-  0% { box-shadow: 0 0 10px var(--neon-green); }
-  50% { box-shadow: 0 0 25px var(--neon-green); }
-  100% { box-shadow: 0 0 10px var(--neon-green); }
-}
-
-.name-box { width: 100%; background: rgba(0,0,0,0.92); padding: 1px 0; border-radius: 4px; border-bottom: 1px solid var(--gray); margin-bottom: 4px; }
+.name-box { width: 100%; background: rgba(0,0,0,0.92); padding: 1px 0; border-radius: 4px; border-bottom: 1px solid var(--gray); margin-bottom: 4px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
 .name-tag { color: var(--gold); font-size: 10px; font-weight: bold; }
 .score-tag { color: #fff; font-size: 12px; font-weight: 900; }
 .fold-tag { color: var(--red); font-size: 14px; font-weight: bold; margin-top: 5px; }
@@ -122,37 +104,26 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
 .btn-plus { background: #333; color: #fff; border: 1px solid #666; padding: 4px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: bold; min-width: 38px; height: 21px; display: flex; align-items: center; justify-content: center; }
 .btn-plus.pushed { background: var(--green); border-color: var(--neon-green); }
 
+.balance-tag { 
+  color: var(--gold); font-size: 11px; font-weight: bold; margin-top: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 4px; padding: 1px 6px;
+  background: rgba(0,0,0,0.3);
+}
+
 .controls { position: fixed; bottom: 10px; width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 0 10px; box-sizing: border-box; }
 .btn-group { width: 100%; display: flex; justify-content: center; gap: 6px; }
 .btn { flex: 1; padding: 14px 0; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; background: #2e7d32; font-size: 11px; }
 .bet-display { background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 5px; color: var(--gold); font-weight: bold; font-size: 14px; z-index: 100; margin-bottom: 2px; }
 
-/* Score table styles */
 .score-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; }
 .group-dot { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #666; cursor: pointer; margin-right: 10px; flex-shrink: 0; }
 .total-score { font-size: 24px; color: var(--neon-green); margin-top: 15px; font-weight: 900; border-top: 2px solid var(--gold); padding-top: 10px; }
 .group-selector { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 15px 0; justify-items: center; }
 .g-btn { width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; cursor: pointer; }
 
-/* New Group Layout */
-.group-block {
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid #333;
-  margin-bottom: 4px;
-}
-.group-players {
-  flex: 1;
-}
-.group-total-val {
-  font-size: 28px;
-  font-weight: 900;
-  color: #fff;
-  padding: 0 15px;
-  min-width: 50px;
-  text-align: center;
-  border-left: 1px solid rgba(255,255,255,0.1);
-}
+.group-block { display: flex; align-items: center; border-bottom: 1px solid #333; margin-bottom: 4px; }
+.group-players { flex: 1; }
+.group-total-val { font-size: 28px; font-weight: 900; color: #fff; padding: 0 15px; min-width: 50px; text-align: center; border-left: 1px solid rgba(255,255,255,0.1); }
 </style>
 </head>
 <body onclick="closeAllMiniOverlays()">
@@ -161,8 +132,10 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
   <div class="modal-content" id="modalContent">
     <h3 id="modalTitle" style="color:var(--gold); margin:0;"></h3>
     <div id="modalBody"></div>
-    <div style="text-align: center; margin-top: 10px;">
+    <div style="text-align: center; margin-top: 10px; display: flex; justify-content: space-around; align-items: center;">
+      <button id="balToggleBtn" class="icon-btn" onclick="toggleBalanceUI()" style="display:none">🔘</button>
       <button class="modal-btn" onclick="closeModal()">ՀԱՍՏԱՏԵԼ</button>
+      <button id="taxToggleBtn" class="icon-btn" onclick="setTaxRate()" style="display:none">💯</button>
     </div>
   </div>
 </div>
@@ -182,25 +155,25 @@ body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: 
     <button class="btn" style="background: #555; max-width: 45px;" onclick="setBet()">📝</button>
     <button class="btn" style="background: #555; max-width: 45px;" onclick="showPoints()">📌</button>
     <button class="btn" onclick="startNewRound()">ՆՈՐ ԽԱՂ</button>
-    <button class="btn" style="background: #2196F3;" onclick="revealAll()">ԲԱՑԵԼ</button>
-    <button class="btn" style="background: #ef6c00;" onclick="nextCommunity()">ՀԱՋՈՐԴ</button>
+    <button class="btn" id="revealBtn" style="background: #2196F3;" onclick="revealAll()">ԲԱՑԵԼ</button>
+    <button class="btn" id="nextBtn" style="background: #ef6c00;" onclick="nextCommunity()">ՀԱՋՈՐԴ</button>
   </div>
 </div>
 
 <script>
 const values = ["1","2","3","4","5","6","7","8","9"];
 const groupColors = ["transparent", "#ff00ff", "#00ffff", "#ffff00", "#39ff14", "#ff4500", "#8a2be2", "#ff0000", "#ffffff", "#000000"];
-let deck = [], seats = [], community = [], stage = 0, isRevealed = false;
-let gameCount = 0, baseBet = 30, currentRoundMax = 0;
+let deck = [], seats = [], community = [], stage = 0, isRevealed = false, gameFinished = false;
+let gameCount = 0, baseBet = 30, currentRoundMax = 0, showBalanceUI = true, taxRate = 10;
 let gameStateHistory = [], activeModalAction = null;
 
 function saveState() {
   const state = {
-    community: JSON.stringify(community), stage, currentRoundMax,
+    community: JSON.stringify(community), stage, currentRoundMax, showBalanceUI, taxRate, gameFinished,
     isRevealed, seats: JSON.stringify(seats.map(s => ({...s, lastClick: 0})))
   };
   gameStateHistory.push(state);
-  if (gameStateHistory.length > 15) gameStateHistory.shift();
+  if (gameStateHistory.length > 20) gameStateHistory.shift();
 }
 
 function undoMove() {
@@ -208,14 +181,17 @@ function undoMove() {
   const lastState = gameStateHistory.pop();
   community = JSON.parse(lastState.community); stage = lastState.stage;
   currentRoundMax = lastState.currentRoundMax; isRevealed = lastState.isRevealed;
+  showBalanceUI = lastState.showBalanceUI; taxRate = lastState.taxRate || 10;
+  gameFinished = lastState.gameFinished || false;
   seats = JSON.parse(lastState.seats);
-  updateBetDisplay();
-  renderAll();
+  updateBetDisplay(); renderAll();
 }
 
-function showModal(title, bodyHtml, action) {
+function showModal(title, bodyHtml, action, showIcons = false) {
   document.getElementById('modalTitle').innerText = title;
   document.getElementById('modalBody').innerHTML = bodyHtml;
+  document.getElementById('balToggleBtn').style.display = showIcons ? 'block' : 'none';
+  document.getElementById('taxToggleBtn').style.display = showIcons ? 'block' : 'none';
   document.getElementById('customModal').style.display = 'flex';
   activeModalAction = action;
 }
@@ -226,86 +202,38 @@ function closeModal() {
   if (activeModalAction) activeModalAction(val);
 }
 
-function openGroupPicker(seatIdx) {
-  let pickerHtml = `<div class="group-selector">`;
-  groupColors.forEach((color, gId) => {
-    pickerHtml += `<div class="g-btn" style="background:${color}" onclick="setPlayerGroup(${seatIdx}, ${gId})"></div>`;
-  });
-  pickerHtml += `</div>`;
-  showModal("Ընտրիր Խումբը", pickerHtml, null);
-}
+function toggleBalanceUI() { saveState(); showBalanceUI = !showBalanceUI; renderAll(); }
 
-function setPlayerGroup(seatIdx, groupId) {
-  seats[seatIdx].groupId = groupId;
+function setTaxRate() {
+  let currentVal = taxRate;
   document.getElementById('customModal').style.display = 'none';
-  showPoints();
-}
-
-function showPoints() {
-  let totalTablePenalty = 0;
-  let groupsInPlay = new Set();
-  let activePlayersCount = 0;
-
-  seats.forEach(s => { 
-    if(s.name && !s.folded) {
-      activePlayersCount++;
-      if(s.groupId > 0) groupsInPlay.add(s.groupId); 
-    }
-  });
-
-  let grouped = {};
-  seats.forEach((s, i) => {
-    if (!s.name) return;
-    if (!grouped[s.groupId]) grouped[s.groupId] = [];
-    let isIgnored = s.groupId > 0 && groupsInPlay.has(s.groupId) && s.folded;
-    let actualP = isIgnored ? 0 : (s.penalty || 0);
-    totalTablePenalty += actualP;
-    grouped[s.groupId].push({...s, idx: i, isIgnored, actualP});
-  });
-
-  let rowsHtml = "";
-  Object.keys(grouped).forEach(gId => {
-    let groupSum = 0, playersHtml = "";
-    grouped[gId].forEach(p => {
-      groupSum += p.actualP;
-      let isWinner = (activePlayersCount === 1 && !p.folded);
-      let nameHtml = isWinner ? `<span class="winner-active-name">${p.name}</span>` : `<span>${p.name}</span>`;
-      let scoreHtml = isWinner ? `<span class="victory-label">ՀԱՂԹԱՆԱԿ</span>` : `<span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'ԹԻՄ' : '-' + p.penalty) : '0'}</span>`;
-      playersHtml += `<div class="score-row group-${p.groupId}"><div style="display:flex; align-items:center;"><div class="group-dot" style="background:${groupColors[p.groupId]}" onclick="openGroupPicker(${p.idx})"></div>${nameHtml}</div>${scoreHtml}</div>`;
-    });
-    if (gId == 0) rowsHtml += playersHtml;
-    else rowsHtml += `<div class="group-block"><div class="group-players">${playersHtml}</div><div class="group-total-val" style="color:#fff">${groupSum}</div></div>`;
-  });
-  showModal("Միավորներ", `<div>${rowsHtml || 'Դատարկ'}<div class="total-score">ԸՆԴՀԱՆՈՒՐ: ${totalTablePenalty}</div></div>`, null);
+  setTimeout(() => {
+    showModal("Պահումի %", `<input type="number" id="modalInput" class="modal-input" value="${currentVal}">`, (val) => {
+        if (val !== undefined && !isNaN(val)) { saveState(); taxRate = parseInt(val); }
+    }, false);
+  }, 100);
 }
 
 function setBet() {
   showModal("Սահմանել Մեկնարկային", `<input type="number" id="modalInput" class="modal-input" value="${baseBet}">`, (b) => {
     if (b && !isNaN(b)) { saveState(); baseBet = parseInt(b); updateBetDisplay(); }
-  });
+  }, true);
 }
 
-function updateBetDisplay() { document.getElementById("betDisplay").innerText = "Ընթացիկ ՝ " + currentRoundMax; }
-
-function closeAllMiniOverlays() {
-  seats.forEach((s, i) => { if(s.showMiniTable) { s.showMiniTable = false; renderSeat(i); } });
-}
-
-function handlePlus(event, i) {
-  event.stopPropagation();
-  closeAllMiniOverlays();
-  seats[i].showMiniTable = true;
-  renderSeat(i);
+function updateTeamBalance(groupId, newBalance) {
+  if (groupId === 0) return;
+  seats.forEach(s => { if(s.groupId === groupId) s.balance = newBalance; });
 }
 
 function applyStep(seatIdx, amount) {
   saveState();
-  if (amount > currentRoundMax) {
-    seats.forEach(s => { if(s.name) s.currentStepBet = 0; });
-  }
-  currentRoundMax = amount;
-  seats[seatIdx].currentStepBet = amount;
-  seats[seatIdx].showMiniTable = false;
+  let s = seats[seatIdx];
+  let diff = amount - s.currentStepBet;
+  s.balance -= diff;
+  if (s.groupId > 0) updateTeamBalance(s.groupId, s.balance);
+  currentRoundMax = Math.max(currentRoundMax, amount);
+  s.currentStepBet = amount;
+  s.showMiniTable = false;
   const slot = document.getElementById("slot" + seatIdx);
   slot.classList.remove("push-effect");
   void slot.offsetWidth;
@@ -313,14 +241,151 @@ function applyStep(seatIdx, amount) {
   updateBetDisplay(); renderAll();
 }
 
+function renderSeat(i) {
+  let s = seats[i], slot = document.getElementById("slot" + i);
+  if(!s.name) return;
+  let hasWinner = slot.classList.contains("winner-glow");
+  let hasTurn = slot.classList.contains("active-turn");
+  let hasAnim = slot.classList.contains("push-effect");
+  slot.className = "seat-slot active" + (s.folded ? " folded" : "") + (hasWinner ? " winner-glow" : "") + (hasTurn ? " active-turn" : "") + (hasAnim ? " push-effect" : "");
+  let v1 = baseBet, v2 = baseBet*2, v3 = baseBet*3;
+  let score = calculateScore(s.cards);
+  let balColor = s.balance < 0 ? 'var(--red)' : 'var(--gold)';
+
+  slot.innerHTML = `
+    <div class="name-box" style="border-top: 3px solid ${groupColors[s.groupId]}" onclick="openBalanceMenu(event, ${i})">
+      <span class="name-tag ${hasWinner ? 'winner-active-name' : ''}">${s.name}</span>
+      <span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span>
+    </div>
+    <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
+    ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `
+      <div class="fold-actions">
+        <button class="btn-fold" onclick="foldPlayer(event, ${i})">ՔՑԵԼ</button>
+        <button class="btn-plus ${s.currentStepBet >= currentRoundMax && currentRoundMax > 0 ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button>
+      </div>`}
+    <div class="balance-tag" style="display:${showBalanceUI ? 'block' : 'none'}; color:${balColor}">${s.balance}</div>
+    ${s.showMiniTable ? `
+      <div class="mini-stake-overlay" onclick="event.stopPropagation()">
+        <button class="mini-opt" ${v1 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v1})">${v1}</button>
+        <button class="mini-opt" ${v2 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v2})">${v2}</button>
+        <button class="mini-opt" ${v3 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v3})">${v3}</button>
+      </div>` : ''}
+  `;
+}
+
+function nextCommunity() {
+  if (!isRevealed || stage >= 3 || gameFinished) return;
+  saveState();
+  seats.forEach(s => { 
+    if(s.name && !s.folded) { 
+        if (s.currentStepBet === 0) { 
+          s.balance -= baseBet; 
+          if(s.groupId > 0) updateTeamBalance(s.groupId, s.balance); 
+          s.totalCommitted += baseBet; 
+        } else { 
+          s.totalCommitted += s.currentStepBet; 
+          s.currentStepBet = 0; 
+        }
+    } 
+  });
+  currentRoundMax = 0; updateBetDisplay();
+  if (stage === 0) { community = [deck.pop(), deck.pop(), deck.pop()]; stage = 1; }
+  else if (stage < 3) { community.push(deck.pop()); stage++; }
+  renderAll();
+  if (community.length === 5) markWinner();
+}
+
+function revealAll() { 
+  if (gameFinished) return;
+  saveState(); 
+  isRevealed = true; 
+  seats.forEach((s, i) => { if(s.name) s.open = true; }); 
+  renderAll(); 
+}
+
+function foldPlayer(event, i) { 
+  event.stopPropagation(); 
+  saveState();
+  let s = seats[i];
+  
+  if (s.currentStepBet > 0) {
+    s.balance += s.currentStepBet;
+    if (s.groupId > 0) updateTeamBalance(s.groupId, s.balance);
+  }
+
+  s.penalty = s.totalCommitted;
+  s.folded = true;
+  s.currentStepBet = 0;
+  
+  document.getElementById("slot" + i).classList.remove("active-turn");
+  renderSeat(i); 
+  checkAutoWinner(); 
+}
+
+function checkAutoWinner() {
+  let activeSides = new Set();
+  seats.forEach((s, i) => { if (s.name && !s.folded) activeSides.add(s.groupId === 0 ? `p_${i}` : `g_${s.groupId}`); });
+  if (activeSides.size === 1) markWinner();
+}
+
+function markWinner() {
+  if (gameFinished) return;
+  let active = []; 
+  let totalPot = 0;
+
+  seats.forEach((s, i) => { 
+    if(s.name) totalPot += s.penalty || s.totalCommitted + s.currentStepBet;
+    if(s.name && !s.folded) active.push({s, i, score: calculateScore(s.cards)}); 
+  });
+
+  if (active.length > 0) {
+    gameFinished = true; isRevealed = true;
+    seats.forEach(s => { if(s.name) s.open = true; });
+    
+    active.sort((a, b) => b.score - a.score);
+    let winners = active.filter(x => x.score === active[0].score);
+
+    // Թիմային շահումի հաշվարկ
+    let winningGroupIds = new Set(winners.map(w => w.s.groupId));
+    let teamContribution = 0;
+
+    seats.forEach(s => {
+      if (s.name && winningGroupIds.has(s.groupId)) {
+        if (s.groupId > 0 || winners.some(w => w.i === seats.indexOf(s))) {
+          teamContribution += s.penalty || s.totalCommitted + s.currentStepBet;
+        }
+      }
+    });
+
+    let netGain = totalPot - teamContribution;
+    let winAmount = teamContribution + Math.floor(netGain * (1 - taxRate/100));
+
+    seats.forEach((s, i) => {
+        let isWinner = winners.some(w => w.i === i);
+        if (s.name && !isWinner) { 
+            if(!s.folded) s.penalty = s.totalCommitted + s.currentStepBet;
+            s.folded = true; 
+        }
+        if (isWinner) document.getElementById("slot" + i).classList.add("winner-glow");
+    });
+
+    let finalPerWinner = Math.floor(winAmount / winners.length);
+    winners.forEach(w => { 
+      w.s.balance += finalPerWinner; 
+      if (w.s.groupId > 0) updateTeamBalance(w.s.groupId, w.s.balance); 
+    });
+
+    renderAll();
+  }
+}
+
 function setupSlots() {
   const t = document.getElementById("mainTable");
   for(let i=0; i<9; i++){
     let angle = (2 * Math.PI / 9) * i + Math.PI/2;
     let r = (i === 2 || i === 7 || i === 0) ? 40 : 44;
-    let x = 50 + r * Math.cos(angle); 
-    let y = 50 + ((i === 2 || i === 7) ? 60 : 46) * Math.sin(angle);
-    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, currentStepBet: 0, totalCommitted: 0, groupId: 0, showMiniTable: false, clicks: 0, lastClick: 0});
+    let x = 50 + r * Math.cos(angle), y = 50 + ((i === 2 || i === 7) ? 60 : 46) * Math.sin(angle);
+    seats.push({name: null, cards: [], open: false, folded: false, penalty: 0, currentStepBet: 0, totalCommitted: 0, groupId: 0, showMiniTable: false, clicks: 0, lastClick: 0, balance: 0});
     let slot = document.createElement("div");
     slot.className = "seat-slot"; slot.id = "slot" + i;
     slot.style.left = x + "%"; slot.style.top = y + "%";
@@ -332,56 +397,42 @@ function setupSlots() {
 
 function handleSlotInteraction(e, i) {
   e.stopPropagation();
-  if (!seats[i].name) { 
-    showModal("Անունը", `<input type="text" id="modalInput" class="modal-input">`, (n) => { if (n) { seats[i].name = n; renderSeat(i); } });
-    return;
-  }
+  if (!seats[i].name) { showModal("Անունը", `<input type="text" id="modalInput" class="modal-input">`, (n) => { if (n) { seats[i].name = n; renderSeat(i); } }); return; }
   let now = Date.now();
   if (now - seats[i].lastClick < 1000) seats[i].clicks++; else seats[i].clicks = 1;
   seats[i].lastClick = now;
-  if (seats[i].clicks >= 5) { saveState(); removePlayer(i); } else { if(!seats[i].folded) setTurn(i); }
+  if (seats[i].clicks >= 5) { saveState(); removePlayer(i); } else { if(!seats[i].folded && !gameFinished) setTurn(i); }
 }
 
 function setTurn(index) {
   seats.forEach((_, i) => document.getElementById("slot" + i).classList.remove("active-turn"));
   if (seats[index].name && !seats[index].folded) document.getElementById("slot" + index).classList.add("active-turn");
+  renderAll();
 }
 
-function renderSeat(i) {
-  let s = seats[i], slot = document.getElementById("slot" + i);
-  if(!s.name) return;
-  let hasWinner = slot.classList.contains("winner-glow");
-  let hasTurn = slot.classList.contains("active-turn");
-  let hasAnim = slot.classList.contains("push-effect");
-  
-  slot.className = "seat-slot active" + (s.folded ? " folded" : "") + (hasWinner ? " winner-glow" : "") + (hasTurn ? " active-turn" : "") + (hasAnim ? " push-effect" : "");
-  
-  let v1 = baseBet, v2 = baseBet*2, v3 = baseBet*3;
-  let score = calculateScore(s.cards);
-  
-  slot.innerHTML = `
-    <div class="name-box" style="border-top: 3px solid ${groupColors[s.groupId]}"><span class="name-tag">${s.name}</span><span class="score-tag" style="display:${isRevealed ? 'block' : 'none'}">${score}</span></div>
-    <div class="cards-container">${s.cards.length ? cardHTML(s.cards[0], s.open) + cardHTML(s.cards[1], s.open) : ''}</div>
-    ${s.folded ? `<div class="fold-tag">-${s.penalty}</div>` : `
-      <div class="fold-actions">
-        <button class="btn-fold" onclick="foldPlayer(event, ${i})">ՔՑԵԼ</button>
-        <button class="btn-plus ${s.currentStepBet >= currentRoundMax && currentRoundMax > 0 ? 'pushed' : ''}" onclick="handlePlus(event, ${i})">+</button>
-      </div>`}
-    ${s.showMiniTable ? `
-      <div class="mini-stake-overlay" onclick="event.stopPropagation()">
-        <button class="mini-opt" ${v1 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v1})">${v1}</button>
-        <button class="mini-opt" ${v2 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v2})">${v2}</button>
-        <button class="mini-opt" ${v3 < currentRoundMax ? 'disabled' : ''} onclick="applyStep(${i}, ${v3})">${v3}</button>
-      </div>` : ''}
-  `;
+function handlePlus(event, i) { 
+  if (gameFinished) return;
+  event.stopPropagation(); closeAllMiniOverlays(); seats[i].showMiniTable = true; renderSeat(i); 
 }
 
-function renderAll() { seats.forEach((_, i) => renderSeat(i)); document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join(''); }
+function closeAllMiniOverlays() { seats.forEach((s, i) => { if(s.showMiniTable) { s.showMiniTable = false; renderSeat(i); } }); }
 
-function removePlayer(i) {
-  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, currentStepBet: 0, totalCommitted: 0, groupId: 0, showMiniTable: false, clicks: 0, lastClick: 0};
-  let slot = document.getElementById("slot"+i);
-  slot.className = "seat-slot"; slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer">+</button>`;
+function renderAll() { 
+  seats.forEach((_, i) => renderSeat(i)); 
+  document.getElementById("dealerCards").innerHTML = community.map(c => cardHTML(c, true)).join('');
+  let nextBtn = document.getElementById("nextBtn");
+  if (!isRevealed || stage >= 3 || gameFinished) { nextBtn.style.opacity = "0.4"; nextBtn.style.pointerEvents = "none"; }
+  else { nextBtn.style.opacity = "1"; nextBtn.style.pointerEvents = "auto"; }
+}
+
+function cardHTML(c, open) { return `<div class="card ${open ? 'open' : ''}"><div class="back"></div><div class="face">${c.v}</div></div>`; }
+function updateBetDisplay() { document.getElementById("betDisplay").innerText = "Ընթացիկ ՝ " + currentRoundMax; }
+
+function openBalanceMenu(event, i) {
+  event.stopPropagation();
+  showModal(`${seats[i].name}-ի Բալանսը`, `<input type="number" id="modalInput" class="modal-input" value="${seats[i].balance}">`, (val) => {
+    if (val !== undefined && !isNaN(val)) { saveState(); let b = parseInt(val); seats[i].balance = b; if (seats[i].groupId > 0) updateTeamBalance(seats[i].groupId, b); renderAll(); }
+  });
 }
 
 function calculateScore(hand) {
@@ -396,72 +447,79 @@ function calculateScore(hand) {
   return total;
 }
 
-function foldPlayer(event, i) { 
-  event.stopPropagation(); saveState();
-  let s = seats[i];
-  
-  // Ուղղում. pen-ը հավասար է արդեն դրածին + այս փուլի սեղմածին (եթե կա)
-  // ԿԱՄ արդեն դրածին + baseBet (եթե փուլի մեջ է ու դեռ ոչինչ չի սեղմել)
-  let pen = s.totalCommitted;
-  if (s.currentStepBet > 0) {
-    pen += s.currentStepBet;
-  } else {
-    pen += baseBet; // Ավելացնում ենք հաջորդ փուլի մուտքավճարը, եթե հենց սկզբից քցում է
-  }
-
-  s.penalty = pen; s.folded = true;
-  document.getElementById("slot" + i).classList.remove("active-turn");
-  renderSeat(i); 
-}
-
-function cardHTML(c, open) { return `<div class="card ${open ? 'open' : ''}"><div class="back"></div><div class="face">${c.v}</div></div>`; }
-
 function startNewRound() {
-  saveState(); community = []; stage = 0; isRevealed = false; currentRoundMax = 0; updateBetDisplay();
+  saveState(); community = []; stage = 0; isRevealed = false; gameFinished = false; currentRoundMax = 0; updateBetDisplay();
   deck = []; values.forEach((v, i) => { for(let k=0; k<3; k++) deck.push({v, rank: i+1}); });
-  deck.sort(() => Math.random() - 0.5);
-  gameCount++;
+  deck.sort(() => Math.random() - 0.5); gameCount++;
   seats.forEach((s, i) => {
     document.getElementById("slot"+i).classList.remove("winner-glow", "active-turn", "folded", "push-effect");
-    if(s.name) { s.open = false; s.folded = false; s.penalty = 0; s.currentStepBet = 0; s.totalCommitted = 0; s.cards = [deck.pop(), deck.pop()]; } 
-  });
-  renderAll();
-  let activeIdx = []; seats.forEach((s,i) => { if(s.name) activeIdx.push(i); });
-  if (activeIdx.length > 0) setTurn(activeIdx[(gameCount - 1) % activeIdx.length]);
-}
-
-function nextCommunity() {
-  saveState();
-  seats.forEach(s => { 
-    if(s.name && !s.folded) { 
-        // Հաջորդ սեղմելիս հաստատվում է կամ իր դրածը, կամ նվազագույն baseBet-ը
-        let confirm = s.currentStepBet; 
-        if (confirm === 0) confirm = baseBet;
-
-        s.totalCommitted += confirm; 
-        s.currentStepBet = 0; 
+    if(s.name) { 
+        s.open = false; s.folded = false; s.penalty = 0; s.currentStepBet = 0; 
+        s.cards = [deck.pop(), deck.pop()]; 
+        
+        s.balance -= baseBet;
+        s.totalCommitted = baseBet;
+        if(s.groupId > 0) updateTeamBalance(s.groupId, s.balance);
     } 
   });
-  currentRoundMax = 0; updateBetDisplay();
-  if (stage === 0) { community = [deck.pop(), deck.pop(), deck.pop()]; stage = 1; }
-  else if (stage < 3) { community.push(deck.pop()); stage++; }
   renderAll();
-  if (community.length === 5) { markWinner(); }
 }
 
-function revealAll() { saveState(); isRevealed = true; seats.forEach((s, i) => { if(s.name) { s.open = true; renderSeat(i); } }); }
+function removePlayer(i) {
+  seats[i] = {name: null, cards: [], open: false, folded: false, penalty: 0, currentStepBet: 0, totalCommitted: 0, groupId: 0, showMiniTable: false, clicks: 0, lastClick: 0, balance: 0};
+  let slot = document.getElementById("slot"+i);
+  slot.className = "seat-slot"; slot.innerHTML = `<button style="margin-top:40px; background:none; border:none; color:#444; font-size:30px; cursor:pointer">+</button>`;
+}
 
-function markWinner() {
-  let active = [];
-  seats.forEach((s, i) => { 
-    document.getElementById("slot" + i).classList.remove("winner-glow");
-    if(s.name && !s.folded) active.push({s, i, score: calculateScore(s.cards)}); 
-  });
-  if (active.length > 0) {
-    active.sort((a, b) => b.score - a.score);
-    document.getElementById("slot" + active[0].i).classList.add("winner-glow");
-    renderSeat(active[0].i);
+function openGroupPicker(seatIdx) {
+  let pickerHtml = `<div class="group-selector">`;
+  groupColors.forEach((color, gId) => { pickerHtml += `<div class="g-btn" style="background:${color}" onclick="setPlayerGroup(${seatIdx}, ${gId})"></div>`; });
+  pickerHtml += `</div>`;
+  showModal("Ընտրիր Խումբը", pickerHtml, null);
+}
+
+function setPlayerGroup(seatIdx, groupId) {
+  saveState();
+  let player = seats[seatIdx];
+  player.groupId = groupId;
+  if (groupId > 0) {
+      let mates = seats.filter(s => s.groupId === groupId && s.name);
+      if (mates.length > 0) {
+          let totalTeamBalance = mates.reduce((sum, m) => sum + m.balance, 0);
+          updateTeamBalance(groupId, totalTeamBalance);
+      }
   }
+  document.getElementById('customModal').style.display = 'none';
+  showPoints(); renderAll();
+}
+
+function showPoints() {
+  let totalTablePenalty = 0; let activeSides = new Set();
+  seats.forEach(s => { if(s.name && !s.folded) activeSides.add(s.groupId === 0 ? `p_${s.name}` : `g_${s.groupId}`); });
+  let activeSidesCount = activeSides.size;
+  let grouped = {};
+  seats.forEach((s, i) => {
+    if (!s.name) return;
+    if (!grouped[s.groupId]) grouped[s.groupId] = [];
+    let isIgnored = s.groupId > 0 && activeSides.has(`g_${s.groupId}`) && s.folded;
+    let actualP = isIgnored ? 0 : (s.penalty || 0);
+    totalTablePenalty += actualP;
+    grouped[s.groupId].push({...s, idx: i, isIgnored, actualP});
+  });
+  let rowsHtml = "";
+  Object.keys(grouped).forEach(gId => {
+    let groupSum = 0, playersHtml = "";
+    grouped[gId].forEach(p => {
+      groupSum += p.actualP;
+      let isWinner = (activeSidesCount === 1 && !p.folded);
+      let nameHtml = isWinner ? `<span class="winner-active-name">${p.name}</span>` : `<span>${p.name}</span>`;
+      let scoreHtml = isWinner ? `<span class="victory-label">ՀԱՂԹԱՆԱԿ</span>` : `<span style="font-weight:bold; color:${p.isIgnored ? '#555' : 'var(--red)'}">${p.penalty > 0 ? (p.isIgnored ? 'ԹԻՄ' : '-' + p.penalty) : '0'}</span>`;
+      playersHtml += `<div class="score-row group-${p.groupId}"><div style="display:flex; align-items:center;"><div class="group-dot" style="background:${groupColors[p.groupId]}" onclick="openGroupPicker(${p.idx})"></div>${nameHtml}</div>${scoreHtml}</div>`;
+    });
+    if (gId == 0) rowsHtml += playersHtml;
+    else rowsHtml += `<div class="group-block"><div class="group-players">${playersHtml}</div><div class="group-total-val" style="color:#fff">${groupSum}</div></div>`;
+  });
+  showModal("Միավորներ", `<div>${rowsHtml || 'Դատարկ'}<div class="total-score">ԸՆԴՀԱՆՈՒՐ: ${totalTablePenalty}</div></div>`, null);
 }
 setupSlots();
 </script>
